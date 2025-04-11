@@ -31,7 +31,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 # The plugin is now ready to be used.
 #
 # Next steps:
-# 1. Navigate to your CoppeliaSim installation folder:
+# 1. Navigate to your CoppeliaSim installation folder (replace with your actual installation path):
 cd ~/path/to/coppeliaSim/folder
 #
 # 2. Start CoppeliaSim:
