@@ -1,86 +1,68 @@
 sim = require 'sim'
 simROS2 = require 'simROS2'
-simUI = require 'simUI'
 
--- Declaración de variables globales
-ui = nil
-objHandle = nil
-lineTracerBase = nil
-leftSensor = nil
-middleSensor = nil
-rightSensor = nil
-leftJoint = nil
-rightJoint = nil
+-- Global variables
+velSub = nil
 leftJointDynamic = nil
 rightJointDynamic = nil
-velSub = nil
 
--- Parámetros para el control teleop
-wheel_radius = 0.195/2    -- Radio de la rueda (en metros)
-robot_width = 0.33        -- Distancia entre ruedas (en metros)
+-- Teleoperation parameters
+wheel_radius = 0.195/2    -- Wheel radius in meters
+robot_width  = 0.33       -- Distance between wheels in meters
 
--- Función para actualizar la interfaz (LEDs) de los sensores
-setLeds = function(elHandle, left, middle, right)
-    simUI.setCheckboxValue(ui, 1, left and 2 or 0)
-    simUI.setCheckboxValue(ui, 2, middle and 2 or 0)
-    simUI.setCheckboxValue(ui, 3, right and 2 or 0)
-end
-
--- Función de inicialización del script
+-- Initialization function
 function sysCall_init()
-    local xml = [[
-    <ui title="Line tracer, sensor display" closeable="false" placement="relative" position="50,-50" layout="grid">
-        <label text=""/>
-        <checkbox id="1" enabled="false" text="" style="* {font-size: 20px; font-weight: bold; margin-left: 20px; margin-right: 20px;}"/>
-        <checkbox id="2" enabled="false" text="" style="* {font-size: 20px; font-weight: bold; margin-left: 20px; margin-right: 20px;}"/>
-        <checkbox id="3" enabled="false" text="" style="* {font-size: 20px; font-weight: bold; margin-left: 20px; margin-right: 20px;}"/>
-    </ui>
-    ]]
-    ui = simUI.create(xml)
-
-    -- Obtención de handles de los objetos y sensores
-    objHandle = sim.getObject('..')
-    lineTracerBase = sim.getObject("../LineTracerBase")
-    leftSensor = sim.getObject("../LeftSensor")
-    middleSensor = sim.getObject("../MiddleSensor")
-    rightSensor = sim.getObject("../RightSensor")
-    leftJoint = sim.getObject("../LeftJoint")
-    rightJoint = sim.getObject("../RightJoint")
+    -- Retrieve handles for the dynamic joints.
+    -- Update these paths to match your scene's hierarchy.
     leftJointDynamic = sim.getObject("../DynamicLeftJoint")
     rightJointDynamic = sim.getObject("../DynamicRightJoint")
-
-    -- Se activa la suscripción al tópico '/cmd_vel' para recibir Twist
-    velSub = simROS2.createSubscription('/cmd_vel', 'geometry_msgs/msg/Twist', 'setVelocity_cb')
-end
-
--- Callback que se invoca cuando se recibe un mensaje en /cmd_vel
-function setVelocity_cb(msg)
-    -- Extraemos la velocidad lineal (m/s) y angular (rad/s)
-    local linear = msg.linear.x
-    local angular = msg.angular.z
-
-    -- Cálculo de la velocidad de cada rueda utilizando la cinemática diferencial:
-    local vl = linear - (angular * robot_width) / 2
-    local vr = linear + (angular * robot_width) / 2
-
-    -- Conversión de velocidad lineal (m/s) a velocidad angular (rad/s):
-    sim.setJointTargetVelocity(leftJointDynamic, vl / wheel_radius)
-    sim.setJointTargetVelocity(rightJointDynamic, vr / wheel_radius)
-end
-
--- Función de actuation que se llama cada ciclo de simulación
-function sysCall_actuation()
-    -- Aunque el control teleop actualiza las velocidades en el callback,
-    -- aquí se pueden agregar lecturas de sensores o actualizaciones visuales.
-    local sensorLeft = sim.readVisionSensor(leftSensor)
-    local sensorMiddle = sim.readVisionSensor(middleSensor)
-    local sensorRight = sim.readVisionSensor(rightSensor)
     
-    -- Actualización de los indicadores (LEDs) en la UI:
-    setLeds(nil, sensorLeft==1, sensorMiddle==1, sensorRight==1)
+    if leftJointDynamic == -1 then
+        sim.addLog(sim.verbosity_errors, "DynamicLeftJoint not found! Check the object path.")
+    else
+        sim.addLog(sim.verbosity_scriptinfos, "Found DynamicLeftJoint: " .. leftJointDynamic)
+    end
+    
+    if rightJointDynamic == -1 then
+        sim.addLog(sim.verbosity_errors, "DynamicRightJoint not found! Check the object path.")
+    else
+        sim.addLog(sim.verbosity_scriptinfos, "Found DynamicRightJoint: " .. rightJointDynamic)
+    end
+
+    -- Subscribe to the /cmd_vel topic to receive Twist messages
+    velSub = simROS2.createSubscription('/cmd_vel', 'geometry_msgs/msg/Twist', 'setVelocity_cb')
+    sim.addLog(sim.verbosity_scriptinfos, "Subscribed to /cmd_vel for teleop control")
 end
 
--- Función de limpieza (al finalizar la simulación)
+-- Callback to process incoming Twist messages from teleoperation
+function setVelocity_cb(msg)
+    local linear = msg.linear.x   -- Desired forward speed (m/s)
+    local angular = msg.angular.z -- Desired rotational speed (rad/s)
+
+    -- Compute individual wheel linear velocities (m/s)
+    local v_left  = linear - (angular * robot_width / 2)
+    local v_right = linear + (angular * robot_width / 2)
+    
+    -- Convert linear velocities to wheel angular velocities (rad/s)
+    local leftSpeed  = v_left / wheel_radius
+    local rightSpeed = v_right / wheel_radius
+
+    -- Set the target velocities for the wheel joints
+    sim.setJointTargetVelocity(leftJointDynamic, leftSpeed)
+    sim.setJointTargetVelocity(rightJointDynamic, rightSpeed)
+    
+    sim.addLog(sim.verbosity_scriptinfos, string.format("setVelocity_cb: linear=%.3f, angular=%.3f -> leftSpeed=%.3f, rightSpeed=%.3f", 
+        linear, angular, leftSpeed, rightSpeed))
+end
+
+-- Actuation function (called each simulation step)
+function sysCall_actuation()
+    -- No per-step actions needed here for teleoperation;
+    -- velocity updates occur in the ROS2 callback.
+end
+
+-- Cleanup function (called at simulation end)
 function sysCall_cleanup()
-    simROS2.shutdownSubscription(velSub)
+    simROS2.shutdownSubscription('/cmd_vel')
+    sim.addLog(sim.verbosity_scriptinfos, "ROS2 subscription shutdown")
 end
