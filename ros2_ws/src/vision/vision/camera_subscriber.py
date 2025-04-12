@@ -6,40 +6,64 @@ from cv_bridge import CvBridge
 import numpy as np
 
 class CameraSubscriber(Node):
+    """
+    A ROS2 Node that subscribes to an Image topic and displays the frames 
+    using OpenCV. It also applies a vertical flip to each frame before rendering.
+    """
+
     def __init__(self):
         super().__init__('camera_subscriber')
+        
+        # Create a subscription to the '/camera/image' topic of type sensor_msgs.msg.Image.
+        # The callback function 'listener_callback' is invoked each time a new message arrives.
         self.subscription = self.create_subscription(
             Image,
             '/camera/image',
             self.listener_callback,
-            10)
-        self.subscription  # evita la advertencia de variable no usada
+            10
+        )
+        # Avoids an unused variable warning.
+        self.subscription
+        
+        # Initialize the CvBridge, which handles conversions between ROS Image messages and OpenCV images.
         self.bridge = CvBridge()
 
     def listener_callback(self, msg):
+        """
+        Callback function that triggers on receiving a new Image message.
+        Converts the ROS Image into an OpenCV image, flips it vertically, 
+        and then displays it in a window.
+        """
         try:
-            # Convierte el mensaje ROS a una imagen OpenCV
+            # Convert the ROS Image message to an OpenCV image in RGB format.
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
         except Exception as e:
-            self.get_logger().error('Error al convertir imagen: %s' % str(e))
+            self.get_logger().error(f"Error converting image: {str(e)}")
             return
 
-        # OpenCV utiliza el formato BGR, por lo que se convierte:
+        # Convert from RGB to BGR, as required by OpenCV.
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
         
-        # Invierte la imagen verticalmente (usa 0 para flip vertical)
+        # Flip the image vertically. 
+        #   Flip code 0 indicates a vertical flip.
+        #   Flip code 1 indicates a horizontal flip.
+        #   Flip code -1 indicates a flip in both axes.
         cv_image = cv2.flip(cv_image, 0)
         
-        # Para invertir horizontalmente, reemplaza 0 por 1.
-        # Para invertir tanto vertical como horizontalmente, usar -1.
-        
-        # Muestra la imagen en una ventana
+        # Display the image in a window titled "Camera Image".
         cv2.imshow("Camera Image", cv_image)
-        cv2.waitKey(1)  # Necesario para actualizar la ventana
+
+        # Wait 1 millisecond to allow the window to refresh.
+        cv2.waitKey(1)
 
 def main(args=None):
+    """
+    Main entry point of the script. Initializes the ROS client library,
+    creates the node, and keeps spinning until the user interrupts (e.g., Ctrl-C).
+    """
     rclpy.init(args=args)
     node = CameraSubscriber()
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
