@@ -115,7 +115,7 @@ class VisualServoing(Node):
         # Flag indicating if the PID stop command has been sent
         self.pid_stopped = False
 
-        self.get_logger().info("Visual Servoing Node Started")
+        self.get_logger().info("Visual Servoing Node Started.")
 
     def sim_time_callback(self, msg):
         # Update simulation time from the /simulationTime topic (s)
