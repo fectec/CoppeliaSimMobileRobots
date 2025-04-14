@@ -1,15 +1,20 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>vision</name>
+  <name>control</name>
   <version>0.0.0</version>
-  <description>
-    This package implements computer vision algorithms for the CoppeliaSim
+  <description> 
+    This package implements control algorithms for the CoppeliaSim
     differential drive simulation robot.
   </description>
-  
-  <maintainer email="rovestrada@gmail.com">rovestrada</maintainer>
+  <maintainer email="fectec151@gmail.com">fectec</maintainer>
   <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>transforms3d</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

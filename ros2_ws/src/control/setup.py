@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'vision'
+package_name = 'control'
 
 setup(
     name=package_name,
@@ -13,14 +13,15 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='rovestrada',
-    maintainer_email='rovestrada@gmail.com',
-    description='This package implements computer vision algorithms for the CoppeliaSim differential drive simulation robot.',
+    maintainer='fectec',
+    maintainer_email='fectec151@gmail.com',
+    description=' This package implements control algorithms for the CoppeliaSim differential drive simulation robot.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'camera_subscriber = vision.camera_subscriber:main',
+            'position_controller = control.position_controller:main',
+            'localization = control.localization:main'
         ],
     },
 )

@@ -57,7 +57,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        node.get_logger().info("Keyboard interrupt received. Shutting down.")
     finally:
         node.destroy_node()
         rclpy.shutdown()
