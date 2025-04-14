@@ -14,14 +14,14 @@ def generate_launch_description():
         name='localization'
     )
 
-    position_controller_node = Node(
+    point_controller_node = Node(
         package='control',
-        executable='position_controller',
-        name='position_controller'
+        executable='point_controller',
+        name='point_controller'
     )
 
     return LaunchDescription([
         camera_subscriber_node,
         localization_node,
-        position_controller_node
+        point_controller_node
     ])

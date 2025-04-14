@@ -7,22 +7,38 @@ import math
 
 from rclpy.node import Node
 from rclpy import qos
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32  
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
 
 # ========================
 # Utility Functions
 # ========================
-def wrap_to_pi(angle):
+def wrap_to_pi(theta):
     """Wrap angle to [-pi, pi]"""
-    result = np.fmod((angle + math.pi), 2.0 * math.pi)
+    result = np.fmod(theta + math.pi, 2.0 * math.pi)
     if result < 0:
         result += 2.0 * math.pi
     return result - math.pi
 
+def quaternion_to_euler(x, y, z, w):
+    """Convert quaternion to Euler angles (roll, pitch, yaw)"""
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll = math.atan2(t0, t1)
+    
+    t2 = +2.0 * (w * y - z * x)
+    t2 = max(min(t2, 1.0), -1.0)
+    pitch = math.asin(t2)
+    
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw = math.atan2(t3, t4)
+    
+    return roll, pitch, yaw
+
 # ========================
-# Dead Reckoning Node
+# Dead Reckoning Node Using Simulation Time
 # ========================
 class DeadReckoning(Node):
     """
@@ -31,63 +47,41 @@ class DeadReckoning(Node):
     robot's position and orientation are updated over time using Euler integration
     of the kinematic model.
 
-    Two equivalent formulations are used to describe the motion:
+    The orientation is maintained in the range [-pi, pi].
 
-    1. Based on wheel angular velocities:
-        x_{k+1}     = x_k + (r/2) * (w_r + w_l) * cos(theta_k) * dt
-        y_{k+1}     = y_k + (r/2) * (w_r + w_l) * sin(theta_k) * dt
-        theta_{k+1} = theta_k + (r/l) * (w_r - w_l) * dt
-
-    2. Using computed linear and angular velocity:
-        V     = (r/2) * (w_r + w_l)
-        Omega = (r/l) * (w_r - w_l)
-
-        x_{k+1}     = x_k + V * cos(theta_k) * dt
-        y_{k+1}     = y_k + V * sin(theta_k) * dt
-        theta_{k+1} = theta_k + Omega * dt
-
-    Where:
-      - r     = wheel_radius
-      - l     = wheel_base (distance between wheels)
-      - w_r   = angular velocity of the right wheel (rad/s)
-      - w_l   = angular velocity of the left wheel (rad/s)
-      - V     = linear velocity of the robot (m/s)
-      - Omega = angular velocity of the robot (rad/s)
-      - dt    = time step between updates (s)
-      - theta_k = robot heading at step k
-
-    The orientation angle theta is wrapped to the interval [-pi, pi] using a 
-    utility function to avoid unbounded growth. The result is a continuously 
-    updated pose estimate published as a nav_msgs/Odometry message on the /odom topic.
+    **Simulation Time:**
+    This node subscribes to the /simulationTime topic to obtain the simulation time 
+    (in seconds) published from CoppeliaSim. That simulation time is used for the
+    integration time-step (dt).
     """
 
     def __init__(self):
         super().__init__('dead_reckoning')
 
-        # Declare parameters for wheel geometry and update rate
-        self.declare_parameter('wheel_base', 0.33)
-        self.declare_parameter('wheel_radius', 0.195 / 2)
-        self.declare_parameter('update_rate', 20.0)
+        # Declare parameters for wheel geometry (m) and update rate (Hz)
+        self.declare_parameter('wheel_base', 0.119)
+        self.declare_parameter('wheel_radius', 0.027)
+        self.declare_parameter('update_rate', 40.0)
 
         # Load parameter values
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
-        self.update_rate = self.get_parameter('update_rate').get_parameter_value().double_value
+        self.update_rate = self.get_parameter('update_rate').get_parameter_value().double_value 
         
-        # Robot pose
+        # Robot pose (x, y) and heading (theta in [-pi, pi])
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
 
         # Wheel angular velocities (rad/s)
-        self.w_r = 0.0
-        self.w_l = 0.0
+        self.omega_r = 0.0
+        self.omega_l = 0.0
 
-        # Internal time reference
-        self.first_update = True
-        self.last_time = None
+        # For simulation time (s) tracking
+        self.sim_time = None        # current simulation time
+        self.last_sim_time = None   # last simulation time received
 
-         # Subscribe to wheel speeds
+        # Subscribe to wheel speeds
         self.create_subscription(
             Float32,
             '/VelocityEncR',
@@ -100,67 +94,80 @@ class DeadReckoning(Node):
             self.left_wheel_callback,
             qos.qos_profile_sensor_data
         )
+        # Subscribe to simulation time (Float32 message from CoppeliaSim)
+        self.create_subscription(
+            Float32,
+            '/simulationTime',
+            self.sim_time_callback,
+            qos.qos_profile_sensor_data
+        )
 
-        # Publish odometry
+        # Publisher for odometry
         self.odom_pub = self.create_publisher(
             Odometry,
             '/odom',
             qos.qos_profile_sensor_data
         )   
 
-        # We'll skip updates if dt is too small
+        # Timer for periodic updates; use a minimum dt from update_rate
         self.min_dt = 1.0 / self.update_rate
-
-        # Timer for periodic updates
         self.timer = self.create_timer(self.min_dt, self.update_odometry)
 
-        self.get_logger().info("Differential-Drive Dead-Reckoning Node Started.") 
+        self.get_logger().info("Differential-Drive Dead-Reckoning Node Started.")
 
     def right_wheel_callback(self, msg):
-        """
-        Update right wheel angular velocity from the encoder (rad/s).
-        """
-        self.w_r = msg.data
+        """Update right wheel angular velocity (rad/s) from the encoder."""
+        self.omega_r = msg.data
 
     def left_wheel_callback(self, msg):
+        """Update left wheel angular velocity (rad/s) from the encoder."""
+        self.omega_l = msg.data
+
+    def sim_time_callback(self, msg):
         """
-        Update left wheel angular velocity from the encoder (rad/s).
+        Callback for /simulationTime topic.
+        The simulation time (in seconds) is provided in msg.data.
         """
-        self.w_l = msg.data
+        self.sim_time = msg.data
 
     def update_odometry(self):
         """
-        Integrate the differential-drive equations to compute
-        (x, y, theta). Then publish on /odom.
+        Integrate the differential-drive equations using simulation time dt
+        to update (x, y, theta) and publish the odometry message.
         """
-        current_time = self.get_clock().now()
-
-        if self.first_update:
-            self.last_time = current_time
-            self.first_update = False
+        # Ensure we have received simulation time
+        if self.sim_time is None:
             return
 
-        # Time step
-        dt = (current_time - self.last_time).nanoseconds * 1e-9
+        # Initialize last_sim_time on first valid update
+        if self.last_sim_time is None:
+            self.last_sim_time = self.sim_time
+            return
+
+        # Compute dt from simulation time differences
+        dt = self.sim_time - self.last_sim_time
         if dt < self.min_dt:
             return
-        
-        # Convert wheel speeds (rad/s) to linear speeds (m/s)
-        v_r = self.wheel_radius * self.w_r
-        v_l = self.wheel_radius * self.w_l
+        self.last_sim_time = self.sim_time
 
-        # Robot linear and angular velocity
+        # Convert wheel angular velocities (rad/s) to linear speeds (m/s)
+        v_r = self.wheel_radius * self.omega_r
+        v_l = self.wheel_radius * self.omega_l
+
+        # Compute linear (m/s) and angular (rad/s) velocities of the robot
         V = 0.5 * (v_r + v_l)
         Omega = (v_r - v_l) / self.wheel_base
 
         # Integrate pose using Euler's method
         self.x += V * math.cos(self.theta) * dt
         self.y += V * math.sin(self.theta) * dt
+        # Use wrap_to_pi to maintain theta in [-pi, pi]
         self.theta = wrap_to_pi(self.theta + Omega * dt)
 
-        # Prepare Odometry
+        # Prepare the Odometry message
         odom_msg = Odometry()
-        odom_msg.header.stamp = current_time.to_msg()
+        # Set the header stamp using simulation time
+        odom_msg.header.stamp = rclpy.time.Time(seconds=self.sim_time).to_msg()
         odom_msg.header.frame_id = 'odom'
         odom_msg.child_frame_id = 'base_footprint'
 
@@ -168,8 +175,7 @@ class DeadReckoning(Node):
         odom_msg.pose.pose.position.y = self.y
         odom_msg.pose.pose.position.z = 0.0
 
-        # Convert Euler -> Quaternion
-        # euler2quat -> returns (w, x, y, z)
+        # Convert Euler (with theta in [-pi, pi]) to Quaternion
         quat = transforms3d.euler.euler2quat(0.0, 0.0, self.theta)
         odom_msg.pose.pose.orientation = Quaternion(
             x=quat[1],
@@ -178,13 +184,12 @@ class DeadReckoning(Node):
             w=quat[0]
         )
 
-        # Fill in twist
+        # Fill in twist (velocities)
         odom_msg.twist.twist.linear.x = V
         odom_msg.twist.twist.angular.z = Omega
 
-        # Publish
+        # Publish odometry
         self.odom_pub.publish(odom_msg)
-        self.last_time = current_time
 
         # Log the updated pose
         self.get_logger().info(
@@ -194,7 +199,6 @@ class DeadReckoning(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = DeadReckoning()
-
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

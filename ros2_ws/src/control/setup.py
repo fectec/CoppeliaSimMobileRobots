@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'position_controller = control.position_controller:main',
+            'point_controller = control.point_controller:main',
             'localization = control.localization:main'
         ],
     },
