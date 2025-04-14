@@ -26,7 +26,7 @@ function sysCall_actuation()
     msg.height = height
     msg.width = width
     msg.encoding = "rgb8"           -- Assuming an 8-bit RGB image
-    msg.is_bigendian = 0
+    msg.is_bigendian = 1
     msg.step = width * 3            -- Number of bytes per line: width * 3 channels
     msg.data = {}
     

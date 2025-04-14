@@ -10,10 +10,8 @@ rightJointDynamic = nil
 wheel_radius = 0.195/2    -- Wheel radius in meters
 robot_width  = 0.33       -- Distance between wheels in meters
 
--- Initialization function
 function sysCall_init()
-    -- Retrieve handles for the dynamic joints.
-    -- Update these paths to match your scene's hierarchy.
+    -- Retrieve handles for the dynamic joints
     leftJointDynamic = sim.getObject("../DynamicLeftJoint")
     rightJointDynamic = sim.getObject("../DynamicRightJoint")
     
@@ -55,14 +53,6 @@ function setVelocity_cb(msg)
         linear, angular, leftSpeed, rightSpeed))
 end
 
--- Actuation function (called each simulation step)
-function sysCall_actuation()
-    -- No per-step actions needed here for teleoperation;
-    -- velocity updates occur in the ROS2 callback.
-end
-
--- Cleanup function (called at simulation end)
 function sysCall_cleanup()
-    simROS2.shutdownSubscription('/cmd_vel')
-    sim.addLog(sim.verbosity_scriptinfos, "ROS2 subscription shutdown")
+    simROS2.shutdownSubscription(velSub)
 end
