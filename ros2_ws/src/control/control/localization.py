@@ -15,14 +15,14 @@ from geometry_msgs.msg import Quaternion
 # Utility Functions
 # ========================
 def wrap_to_pi(theta):
-    """Wrap angle to [-pi, pi]"""
+    # Wrap angle to [-pi, pi]
     result = np.fmod(theta + math.pi, 2.0 * math.pi)
     if result < 0:
         result += 2.0 * math.pi
     return result - math.pi
 
 def quaternion_to_euler(x, y, z, w):
-    """Convert quaternion to Euler angles (roll, pitch, yaw)"""
+    # Convert quaternion (x, y, z, w) to Euler angles (roll, pitch, yaw)
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll = math.atan2(t0, t1)

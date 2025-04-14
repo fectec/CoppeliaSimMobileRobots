@@ -1,6 +1,12 @@
 sim = require 'sim'
 simROS2 = require('simROS2')
 
+-- ============================================================================
+-- This script is attached to a vision sensor mounted on a mobile robot
+-- in CoppeliaSim. It captures RGB images from the sensor and publishes them
+-- as ROS2 messages (sensor_msgs/Image) on the topic /camera/image.
+-- ============================================================================
+
 -- Get the camera handle
 visionSensor = sim.getObject('/visionSensor')
 
@@ -41,5 +47,6 @@ function sysCall_actuation()
 end
 
 function sysCall_cleanup()
+    -- Clean up publisher
     simROS2.shutdownPublisher(imagePub)
 end

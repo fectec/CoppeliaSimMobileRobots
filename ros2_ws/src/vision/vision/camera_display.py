@@ -4,14 +4,14 @@ from sensor_msgs.msg import Image
 import cv2
 from cv_bridge import CvBridge
 
-class CameraSubscriber(Node):
+class CameraDisplay(Node):
     """
     A ROS2 Node that subscribes to an Image topic and displays the frames 
     using OpenCV. It also applies a vertical flip to each frame before rendering.
     """
 
     def __init__(self):
-        super().__init__('camera_subscriber')
+        super().__init__('camera_display')
         
         # Create a subscription to the '/camera/image' topic of type sensor_msgs.msg.Image
         # The callback function 'listener_callback' is invoked each time a new message arrives
@@ -19,7 +19,7 @@ class CameraSubscriber(Node):
             Image,
             '/camera/image',
             self.image_callback,
-            10
+            qos.qos_profile_sensor_data
         )
 
         # Initialize the CvBridge, which handles conversions between ROS Image messages and OpenCV images
@@ -52,7 +52,7 @@ class CameraSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraSubscriber()
+    node = CameraDisplay()
 
     try:
         rclpy.spin(node)

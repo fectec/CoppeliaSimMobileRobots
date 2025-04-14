@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'camera_subscriber = vision.camera_subscriber:main',
+            'camera_display = vision.camera_display:main',
+            'visual_servoing = vision.visual_servoing:main'
         ],
     },
 )

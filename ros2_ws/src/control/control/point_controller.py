@@ -1,41 +1,41 @@
 #!/usr/bin/env python3
 
 import rclpy
-import numpy as np
 import math
-import transforms3d
+import numpy as np
 
 from rclpy.node import Node
 from rclpy import qos
 from std_msgs.msg import Float32MultiArray, Float32
 from geometry_msgs.msg import Twist, Pose2D
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Quaternion
+
+from std_srvs.srv import SetBool
 
 # ========================
 # Utility Functions
 # ========================
 def wrap_to_pi(theta):
-    """Wrap angle to [-pi, pi]"""
+    # Wrap angle to [-pi, pi]
     result = np.fmod((theta + math.pi), (2 * math.pi))
     if result < 0:
         result += 2 * math.pi
     return result - math.pi
 
 def quaternion_to_euler(x, y, z, w):
-    """Convert quaternion to Euler angles (roll, pitch, yaw)"""
+    # Convert quaternion (x,y,z,w) to Euler angles (roll, pitch, yaw)
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll = math.atan2(t0, t1)
-    
+
     t2 = +2.0 * (w * y - z * x)
     t2 = max(min(t2, 1.0), -1.0)
     pitch = math.asin(t2)
-    
+
     t3 = +2.0 * (w * z + x * y)
     t4 = +1.0 - 2.0 * (y * y + z * z)
     yaw = math.atan2(t3, t4)
-    
+
     return roll, pitch, yaw
 
 # ========================
@@ -67,8 +67,11 @@ class PIDPointController(Node):
             Omega = Kp_Omega * e_theta + Ki_Omega * ∫(e_theta) dt + Kd_Omega * d(e_theta)/dt
 
       The robot stops when both the absolute distance and angular errors are below the tolerances.
+      
+      This node also includes a service (/pid_stop) that, when called, forces the controller to publish a zero Twist.
+      In addition, if a new setpoint is received (via /setpoint), the controller automatically resumes.
     """
-    
+
     def __init__(self):
         super().__init__('point_controller')
 
@@ -141,7 +144,11 @@ class PIDPointController(Node):
             self.sim_time_callback,
             qos.qos_profile_sensor_data
         )
-        self.sim_time = None  # Updated in sim_time_callback
+        self.sim_time = None  # Will be updated in sim_time_callback
+
+        # Create a service server to allow external stopping/resuming of PID output
+        self.create_service(SetBool, '/pid_stop', self.pid_stop_callback)
+        self.pid_stop = False
 
         # Timer for the control loop
         self.timer = self.create_timer(1.0 / self.update_rate, self.control_loop)
@@ -149,21 +156,39 @@ class PIDPointController(Node):
         self.get_logger().info("PID Position Controller Node Started.")
 
     def sim_time_callback(self, msg):
-        """Update the internal simulation time (s) from /simulationTime topic."""
+        # Update simulation time from the /simulationTime topic (s)
         self.sim_time = msg.data
 
     def setpoint_callback(self, msg):
-        """Callback for updating the target goal pose."""
+        # Update the target goal pose from the setpoint message
         self.setpoint.x = msg.data[0]
         self.setpoint.y = msg.data[1]
+        # Automatically resume PID control if a new setpoint is received while stopped
+        if self.pid_stop:
+            self.get_logger().info("New setpoint received, resuming PID control.")
+            self.pid_stop = False
 
     def odom_callback(self, msg):
-        """Callback for updating the current robot pose from odometry."""
+        # Update the current robot pose from odometry
         self.current_pose.x = msg.pose.pose.position.x
         self.current_pose.y = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         _, _, yaw = quaternion_to_euler(orientation.x, orientation.y, orientation.z, orientation.w)
         self.current_pose.theta = yaw
+
+    def pid_stop_callback(self, request, response):
+        # Service callback for /pid_stop
+        # If request.data is True, force the PID to stop by publishing zero velocity
+        # If request.data is False, resume normal operation
+        self.pid_stop = request.data
+        response.success = True
+        if self.pid_stop:
+            response.message = "PID controller stopped."
+            self.get_logger().info("Received PID stop command.")
+        else:
+            response.message = "PID controller resumed."
+            self.get_logger().info("Received PID resume command.")
+        return response
 
     def control_loop(self):
         # Use simulation time from the /simulationTime topic
@@ -177,6 +202,14 @@ class PIDPointController(Node):
 
         dt = current_sim_time - self.last_sim_time
         if dt <= 0 or dt < 1.0 / self.update_rate:
+            return
+
+        # If the PID stop flag is set, publish a zero Twist and return immediately
+        if self.pid_stop:
+            stop_cmd = Twist()
+            self.cmd_pub.publish(stop_cmd)
+            self.get_logger().debug("PID stop flag active; publishing zero command.")
+            self.last_sim_time = current_sim_time
             return
 
         # Compute position error components
@@ -213,7 +246,7 @@ class PIDPointController(Node):
         d_e_theta = (e_theta - self.last_e_theta) / dt
         Omega = self.Kp_Omega * e_theta + self.Ki_Omega * self.integral_e_theta + self.Kd_Omega * d_e_theta
 
-        # Save error and time for the next iteration
+        # Save errors and time for the next iteration
         self.last_signed_e_d = signed_e_d
         self.last_e_theta = e_theta
         self.last_sim_time = current_sim_time
