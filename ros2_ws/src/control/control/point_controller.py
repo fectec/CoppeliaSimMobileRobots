@@ -260,10 +260,11 @@ class PIDPointController(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = PIDPointController()
+    
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info("Keyboard interrupt received. Shutting down.")
+        pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
