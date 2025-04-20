@@ -9,7 +9,7 @@ To run this simulation, you will need <a href="https://docs.ros.org/en/humble/In
 </p>
 
 <p align="justify">
-Once both are installed, use the <code>interface_setup</code> script located in the root of this repository to build the CoppeliaSim ROS2 interface.
+Once both are installed, use the <code>interface_setup</code> script located in the root of this repository to build the CoppeliaSim ROS2 interface (<code>sim_ros2_interface</code> package).
 </p>
 
 <p align="justify">
@@ -54,11 +54,13 @@ First, this project implements a visual servoing system where a differential-dri
   </li>
 </ul>
 
+![rqt_graph of Sphere Following Using Position Control](https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732)
+
 <p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the ROS2 system using: </p> 
 
 ```bash
 ros2 launch bringup bringup.launch.py
 ```
 <p align="center"> 
-  <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Sphere Following Using Position Control" width="600"/> 
+  <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Sphere Following Using Position Control Demo" width="600"/> 
 </p>
