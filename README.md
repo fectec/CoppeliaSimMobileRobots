@@ -22,7 +22,7 @@ Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the <code>ca
   </li>
 
   <li><strong><code>differential_drive.lua</code></strong><br>
-    Attached to the differential-drive robot. Subscribes to <code>/cmd_vel</code> to receive velocity commands, applies them to the robot joints, and publishes the actual joint velocities to <code>/VelocityEncL</code> and <code>/VelocityEncR</code>.
+    Attached to the differential-drive robot. Implements inverse kinematics: it subscribes to <code>/cmd_vel</code> (linear and angular velocity commands), converts them into left and right wheel angular speeds, and applies them. It also publishes the actual measured wheel speeds to <code>/VelocityEncL</code> and <code>/VelocityEncR</code>.
   </li>
 
   <li><strong><code>image_publisher.lua</code></strong><br>
