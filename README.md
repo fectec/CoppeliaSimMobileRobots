@@ -46,7 +46,7 @@ First, this project implements a visual servoing system where a differential-dri
   </li>
 
   <li><strong><code>control/localization.py</code></strong><br>
-    Computes the robot’s pose using dead reckoning from wheel encoder data and simulation time.
+    Computes the robot’s pose using dead reckoning from wheel speed data and simulation time.
   </li>
 
   <li><strong><code>control/point_controller.py</code></strong><br>
@@ -59,3 +59,6 @@ First, this project implements a visual servoing system where a differential-dri
 ```bash
 ros2 launch bringup bringup.launch.py
 ```
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Sphere Following Using Position Control" width="600"/> 
+</p>
