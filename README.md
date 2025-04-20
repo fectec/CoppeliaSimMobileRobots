@@ -4,6 +4,10 @@
 ROS2-based simulation of a differential-drive robot in CoppeliaSim with visual servoing. Developed as part of the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
 </p>
 
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/5dd5a6e0-9a61-4b2f-b66c-d648c613e416" alt="CoppeliaSim Logo" width="600"/> 
+</p>
+
 <p align="justify">
 To run this simulation, you will need <a href="https://docs.ros.org/en/humble/Installation.html" target="_blank">ROS 2 Humble</a> and <a href="https://www.coppeliarobotics.com/" target="_blank">CoppeliaSim v4.9.0 rev6</a> installed on your system.
 </p>
@@ -54,7 +58,9 @@ First, this project implements a visual servoing system where a differential-dri
   </li>
 </ul>
 
-![rqt_graph of Sphere Following Using Position Control](https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732)
+<p align="center"> 
+  <img src="https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732" alt="rqt_graph of Sphere Following Using Position Control" width="600"/> 
+</p>
 
 <p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the ROS2 system using: </p> 
 
