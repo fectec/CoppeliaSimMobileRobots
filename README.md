@@ -45,15 +45,15 @@ First, this project implements a visual servoing system where a differential-dri
 </p>
 
 <ul>
-  <li><strong><code>vision/visual_servoing.py</code></strong><br>
+  <li><strong><code>sim_diff_drive_vision/sphere_following.py</code></strong><br>
     Detects the green sphere in camera images and publishes a 2D waypoint ahead of the robot.
   </li>
 
-  <li><strong><code>control/localization.py</code></strong><br>
+  <li><strong><code>sim_diff_drive_control/localization.py</code></strong><br>
     Computes the robot’s pose using dead reckoning from wheel speed data and simulation time.
   </li>
 
-  <li><strong><code>control/point_controller.py</code></strong><br>
+  <li><strong><code>sim_diff_drive_control/point_controller.py</code></strong><br>
     PID position controller that computes velocity commands (<code>cmd_vel</code>) based on the robot’s pose and goal.
   </li>
 </ul>
@@ -65,7 +65,7 @@ First, this project implements a visual servoing system where a differential-dri
 <p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the system using: </p> 
 
 ```bash
-ros2 launch bringup bringup.launch.py
+ros2 launch sim_diff_drive_bringup sphere_following.launch.py
 ```
 <p align="center"> 
   <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Sphere Following Using Position Control Demo" width="600"/> 
