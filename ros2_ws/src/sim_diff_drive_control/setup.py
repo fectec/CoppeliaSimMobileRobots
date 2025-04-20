@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
-package_name = 'control'
+package_name = 'sim_diff_drive_control'
 
 setup(
     name=package_name,
-    version='0.0.0',
+    version='0.1.0',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -15,13 +15,13 @@ setup(
     zip_safe=True,
     maintainer='fectec',
     maintainer_email='fectec151@gmail.com',
-    description=' This package implements control algorithms for the CoppeliaSim differential drive simulation robot.',
+    description='This package implements control algorithms for the CoppeliaSim differential drive simulation robot.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'point_controller = control.point_controller:main',
-            'localization = control.localization:main'
+            'point_controller = sim_diff_drive_control.point_controller:main',
+            'localization = sim_diff_drive_control.localization:main'
         ],
     },
 )

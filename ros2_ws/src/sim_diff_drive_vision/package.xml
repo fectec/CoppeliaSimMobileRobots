@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>vision</name>
-  <version>0.0.0</version>
+  <name>sim_diff_drive_vision</name>
+  <version>0.1.0</version>
   <description>
-    This package implements computer vision algorithms for the CoppeliaSim
-    differential drive simulation robot.
+  This package implements computer vision algorithms for the CoppeliaSim
+  differential drive simulation robot.
   </description>
-  
-  <maintainer email="rovestrada@gmail.com">rovestrada</maintainer>
+  <maintainer email="fectec151@gmail.com">fectec</maintainer>
   <license>Apache-2.0</license>
 
   <test_depend>ament_copyright</test_depend>

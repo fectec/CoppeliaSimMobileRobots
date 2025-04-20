@@ -42,11 +42,11 @@ def quaternion_to_euler(x, y, z, w):
     return roll, pitch, yaw
 
 # ========================
-# Visual Servoing Node
+# Sphere Following Node
 # ========================
-class VisualServoing(Node):
+class SphereFollowing(Node):
     """
-    Visual Servoing Node for a differential-drive robot.
+    Sphere Following Node for a differential-drive robot.
     
     This node performs the following:
       - Receives camera images and converts them into an OpenCV BGR image.
@@ -67,7 +67,7 @@ class VisualServoing(Node):
     """
 
     def __init__(self):
-        super().__init__('visual_servoing')
+        super().__init__('sphere_following')
         self.bridge = CvBridge()
 
         # Subscribe to the camera image topic
@@ -262,7 +262,7 @@ class VisualServoing(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = VisualServoing()
+    node = SphereFollowing()
     
     try:
         rclpy.spin(node)

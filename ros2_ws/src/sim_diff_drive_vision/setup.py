@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'vision'
+package_name = 'sim_diff_drive_vision'
 
 setup(
     name=package_name,
@@ -13,15 +13,15 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='rovestrada',
-    maintainer_email='rovestrada@gmail.com',
+    maintainer='fectec',
+    maintainer_email='fectec151@gmail.com',
     description='This package implements computer vision algorithms for the CoppeliaSim differential drive simulation robot.',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'camera_display = vision.camera_display:main',
-            'visual_servoing = vision.visual_servoing:main'
+            'camera_display = sim_diff_drive_vision.camera_display:main',
+            'sphere_following = sim_diff_drive_vision.sphere_following:main'
         ],
     },
 )
