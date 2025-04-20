@@ -5,5 +5,5 @@ To run this simulation, you will need <a href="https://docs.ros.org/en/humble/In
 </p>
 
 <p align="justify">
-Once both are installed, use the <code>interface_setup<code> script located in the root of this repository to build the CoppeliaSim ROS2 interface.
+Once both are installed, use the <code>interface_setup</code> script located in the root of this repository to build the CoppeliaSim ROS2 interface.
 </p>
