@@ -54,9 +54,7 @@ First, this project implements a visual servoing system where a differential-dri
   </li>
 </ul>
 
-<p align="justify">
-After building all packages (except <code>sim_ros2_interface</code>), run the full system using:
-</p>
+<p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the ROS2 system using: </p> 
 
 ```bash
 ros2 launch bringup bringup.launch.py
