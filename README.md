@@ -1,12 +1,38 @@
 # Coppelia Differential Drive
 
 <p align="justify">
+ROS2-based simulation of a differential-drive robot in CoppeliaSim with visual servoing. Developed as part of the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
+</p>
+
+<p align="justify">
 To run this simulation, you will need <a href="https://docs.ros.org/en/humble/Installation.html" target="_blank">ROS 2 Humble</a> and <a href="https://www.coppeliarobotics.com/" target="_blank">CoppeliaSim v4.9.0 rev6</a> installed on your system.
 </p>
 
 <p align="justify">
 Once both are installed, use the <code>interface_setup</code> script located in the root of this repository to build the CoppeliaSim ROS2 interface.
 </p>
+
+<p align="justify">
+Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the <code>camera_car.ttt</code> file located in the <code>scenes</code> folder. This will load the full simulation environment, including the Lua and Python scripts attached to the objects, which you can also find in the <code>scripts</code> folder:
+</p>
+
+<ul>
+  <li><strong><code>simulation_time_publisher.lua</code></strong><br>
+    Publishes the current simulation time (in seconds) on the <code>/simulationTime</code> ROS 2 topic using a <code>std_msgs/msg/Float32</code> message. Helps synchronize ROS 2 nodes with the simulation clock.
+  </li>
+
+  <li><strong><code>differential_drive.lua</code></strong><br>
+    Attached to the differential-drive robot. Subscribes to <code>/cmd_vel</code> to receive velocity commands, applies them to the robot joints, and publishes the actual joint velocities to <code>/VelocityEncL</code> and <code>/VelocityEncR</code>.
+  </li>
+
+  <li><strong><code>image_publisher.lua</code></strong><br>
+    Attached to the onboard vision sensor. Captures RGB images from the camera and publishes them to <code>/camera/image</code> as <code>sensor_msgs/msg/Image</code>.
+  </li>
+
+  <li><strong><code>sphere_movement.py</code></strong><br>
+    Controls a green sphere in the simulation. Moves it back and forth along the Y-axis in a sinusoidal pattern. Used for visual servoing.
+  </li>
+</ul>
 
 ## Sphere Following Using Position Control
 
@@ -27,3 +53,11 @@ First, this project implements a visual servoing system where a differential-dri
     PID position controller that computes velocity commands (<code>cmd_vel</code>) based on the robot’s pose and goal.
   </li>
 </ul>
+
+<p align="justify">
+After building all packages (except <code>sim_ros2_interface</code>), run the full system using:
+</p>
+
+```bash
+ros2 launch bringup bringup.launch.py
+```
