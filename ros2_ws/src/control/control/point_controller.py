@@ -218,6 +218,7 @@ class PIDPointController(Node):
 
         # Signed distance error along the robot's heading
         signed_e_d = e_x * math.cos(self.current_pose.theta) + e_y * math.sin(self.current_pose.theta)
+        
         # Absolute distance error
         abs_e_d = math.sqrt(e_x**2 + e_y**2)
 
