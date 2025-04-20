@@ -263,10 +263,11 @@ class VisualServoing(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = VisualServoing()
+    
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info("Visual Servoing Node interrupted. Shutting down.")
+        pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
