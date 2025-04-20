@@ -39,7 +39,7 @@ def quaternion_to_euler(x, y, z, w):
     return roll, pitch, yaw
 
 # ========================
-# PID Position Controller Node
+# PID Point Controller Node
 # ========================
 class PIDPointController(Node):
     """
