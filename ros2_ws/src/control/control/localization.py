@@ -9,7 +9,8 @@ from rclpy.node import Node
 from rclpy import qos
 from std_msgs.msg import Float32  
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import Quaternion, TransformStamped
+from tf2_ros import TransformBroadcaster
 
 # ========================
 # Utility Functions
@@ -20,22 +21,6 @@ def wrap_to_pi(theta):
     if result < 0:
         result += 2.0 * math.pi
     return result - math.pi
-
-def quaternion_to_euler(x, y, z, w):
-    # Convert quaternion (x, y, z, w) to Euler angles (roll, pitch, yaw)
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y * y)
-    roll = math.atan2(t0, t1)
-    
-    t2 = +2.0 * (w * y - z * x)
-    t2 = max(min(t2, 1.0), -1.0)
-    pitch = math.asin(t2)
-    
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y * y + z * z)
-    yaw = math.atan2(t3, t4)
-    
-    return roll, pitch, yaw
 
 # ========================
 # Dead Reckoning Node Using Simulation Time
@@ -58,16 +43,18 @@ class DeadReckoning(Node):
     def __init__(self):
         super().__init__('dead_reckoning')
 
-        # Declare parameters for wheel geometry (m) and update rate (Hz)
+        # Declare parameters for wheel geometry (m), update rate (Hz), and integration period (s)
         self.declare_parameter('wheel_base', 0.119)
         self.declare_parameter('wheel_radius', 0.027)
         self.declare_parameter('update_rate', 40.0)
+        self.declare_parameter('integration_period', 0.01)
 
         # Load parameter values
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
         self.update_rate = self.get_parameter('update_rate').get_parameter_value().double_value 
-        
+        self.integration_period = self.get_parameter('integration_period').get_parameter_value().double_value 
+
         # Robot pose (x, y) and heading (theta in [-pi, pi])
         self.x = 0.0
         self.y = 0.0
@@ -78,9 +65,12 @@ class DeadReckoning(Node):
         self.omega_l = 0.0
 
         # For simulation time (s) tracking
-        self.sim_time = None        # current simulation time
-        self.last_sim_time = None   # last simulation time received
+        self.sim_time = None        # Current simulation time
+        self.last_sim_time = None   # Last simulation time received
 
+        # TF broadcaster
+        self.tf_broadcaster = TransformBroadcaster(self)
+   
         # Subscribe to wheel speeds
         self.create_subscription(
             Float32,
@@ -102,16 +92,15 @@ class DeadReckoning(Node):
             qos.qos_profile_sensor_data
         )
 
-        # Publisher for odometry
+        # Odometry publisher
         self.odom_pub = self.create_publisher(
             Odometry,
             '/odom',
             qos.qos_profile_sensor_data
         )   
 
-        # Timer for periodic updates; use a minimum dt from update_rate
-        self.min_dt = 1.0 / self.update_rate
-        self.timer = self.create_timer(self.min_dt, self.update_odometry)
+        # Timer for periodic updates
+        self.timer = self.create_timer(1.0 / self.update_rate, self.update_odometry)
 
         self.get_logger().info("Differential-Drive Dead-Reckoning Node Started.")
 
@@ -126,14 +115,15 @@ class DeadReckoning(Node):
     def sim_time_callback(self, msg):
         """
         Callback for /simulationTime topic.
-        The simulation time (in seconds) is provided in msg.data.
+        The simulation time (s) is provided in msg.data.
         """
         self.sim_time = msg.data
 
     def update_odometry(self):
         """
-        Integrate the differential-drive equations using simulation time dt
-        to update (x, y, theta) and publish the odometry message.
+        Integrate the differential-drive equations using dt
+        to update (x, y, theta), publish the odometry message,
+        and broadcast the corresponding TF transform.
         """
         # Ensure we have received simulation time
         if self.sim_time is None:
@@ -144,9 +134,9 @@ class DeadReckoning(Node):
             self.last_sim_time = self.sim_time
             return
 
-        # Compute dt from simulation time differences
+        # Compute elapsed time since last update (s); skip integration if dt is less than integration_period
         dt = self.sim_time - self.last_sim_time
-        if dt < self.min_dt:
+        if dt < self.integration_period:
             return
         self.last_sim_time = self.sim_time
 
@@ -161,12 +151,10 @@ class DeadReckoning(Node):
         # Integrate pose using Euler's method
         self.x += V * math.cos(self.theta) * dt
         self.y += V * math.sin(self.theta) * dt
-        # Use wrap_to_pi to maintain theta in [-pi, pi]
         self.theta = wrap_to_pi(self.theta + Omega * dt)
 
         # Prepare the Odometry message
         odom_msg = Odometry()
-        # Set the header stamp using simulation time
         odom_msg.header.stamp = rclpy.time.Time(seconds=self.sim_time).to_msg()
         odom_msg.header.frame_id = 'odom'
         odom_msg.child_frame_id = 'base_footprint'
@@ -175,25 +163,34 @@ class DeadReckoning(Node):
         odom_msg.pose.pose.position.y = self.y
         odom_msg.pose.pose.position.z = 0.0
 
-        # Convert Euler (with theta in [-pi, pi]) to Quaternion
+        # Convert yaw to quaternion
         quat = transforms3d.euler.euler2quat(0.0, 0.0, self.theta)
-        odom_msg.pose.pose.orientation = Quaternion(
-            x=quat[1],
-            y=quat[2],
-            z=quat[3],
-            w=quat[0]
-        )
+        odom_msg.pose.pose.orientation = Quaternion(x=quat[1], y=quat[2], z=quat[3], w=quat[0])
 
-        # Fill in twist (velocities)
+        # Fill in twist
         odom_msg.twist.twist.linear.x = V
         odom_msg.twist.twist.angular.z = Omega
 
-        # Publish odometry
+        # Publish Odometry
         self.odom_pub.publish(odom_msg)
+
+        # Broadcast TF transform
+        t = TransformStamped()
+        t.header.stamp = rclpy.time.Time(seconds=self.sim_time).to_msg()
+        t.header.frame_id = 'odom'
+        t.child_frame_id = 'base_footprint'
+        t.transform.translation.x = self.x
+        t.transform.translation.y = self.y
+        t.transform.translation.z = 0.0
+        t.transform.rotation.x = quat[1]
+        t.transform.rotation.y = quat[2]
+        t.transform.rotation.z = quat[3]
+        t.transform.rotation.w = quat[0]
+        self.tf_broadcaster.sendTransform(t)   
 
         # Log the updated pose
         self.get_logger().info(
-            f"DeadReckoning -> x: {self.x:.3f}, y: {self.y:.3f}, theta: {self.theta:.3f} rad"
+            f"Pose -> x: {self.x:.3f}, y: {self.y:.3f}, theta: {self.theta:.3f} rad"
         )
         
 def main(args=None):
