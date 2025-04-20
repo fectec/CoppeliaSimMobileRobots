@@ -62,7 +62,7 @@ First, this project implements a visual servoing system where a differential-dri
   <img src="https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732" alt="rqt_graph of Sphere Following Using Position Control" width="600"/> 
 </p>
 
-<p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the ROS2 system using: </p> 
+<p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the system using: </p> 
 
 ```bash
 ros2 launch bringup bringup.launch.py
