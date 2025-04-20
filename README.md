@@ -4,8 +4,8 @@
 ROS2-based simulation of a differential-drive robot in CoppeliaSim with visual servoing. Developed as part of the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
 </p>
 
-<p align="center"> 
-  <img src="https://github.com/user-attachments/assets/5dd5a6e0-9a61-4b2f-b66c-d648c613e416" alt="CoppeliaSim Logo" width="600"/> 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/5dd5a6e0-9a61-4b2f-b66c-d648c613e416" alt="CoppeliaSim Logo" width="70%"/>
 </p>
 
 <p align="justify">
