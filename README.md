@@ -38,10 +38,10 @@ Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the <code>ca
   </li>
 </ul>
 
-## Sphere Following Using Position Control
+## Sphere Following Using Point-to-Point Control
 
 <p align="justify">
-First, this project implements a visual servoing system where a differential-drive robot tracks and follows a green sphere using position-based PID control. A camera mounted on the robot detects the sphere through HSV color segmentation. The centroid of the sphere is used to compute a heading correction, from which a target waypoint is generated a fixed distance ahead. This waypoint is sent to a PID controller that computes the linear and angular velocities needed to drive the robot toward the goal using odometry feedback. Here’s a quick breakdown of the involved files:
+First, this project implements a visual servoing system where a differential-drive robot tracks and follows a green sphere using a point-to-point PID control. A camera mounted on the robot detects the sphere through HSV color segmentation. The centroid of the sphere is used to compute a heading correction, from which a target waypoint is generated a fixed distance ahead. This waypoint is sent to a PID controller that computes the linear and angular velocities needed to drive the robot toward the goal using odometry feedback. Here’s a quick breakdown of the involved files:
 </p>
 
 <ul>
