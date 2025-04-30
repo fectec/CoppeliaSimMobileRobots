@@ -17,12 +17,12 @@ Once both are installed, use the <code>interface_setup</code> script located in 
 </p>
 
 <p align="justify">
-Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the <code>camera_car.ttt</code> file located in the <code>scenes</code> folder. This will load the full simulation environment, including the Lua and Python scripts attached to the objects, which you can also find in the <code>scripts</code> folder:
+Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the desired <code>.ttt</code> file located in the <code>scenes</code> folder. This will load the full simulation environment, including the Lua and Python scripts attached to the objects, which you can also find in the <code>scripts</code> folder:
 </p>
 
 <ul>
   <li><strong><code>simulation_time_publisher.lua</code></strong><br>
-    Publishes the current simulation time (in seconds) on the <code>/simulationTime</code> ROS 2 topic using a <code>std_msgs/msg/Float32</code> message. Helps synchronize ROS 2 nodes with the simulation clock.
+    Publishes the current simulation time (in seconds) on the <code>/simulationTime</code> ROS2 topic using a <code>std_msgs/msg/Float32</code> message. Helps synchronize ROS2 nodes with the simulation clock.
   </li>
 
   <li><strong><code>differential_drive.lua</code></strong><br>
@@ -33,19 +33,19 @@ Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the <code>ca
     Attached to the onboard vision sensor. Captures RGB images from the camera and publishes them to <code>/camera/image</code> as <code>sensor_msgs/msg/Image</code>.
   </li>
 
-  <li><strong><code>sphere_movement.py</code></strong><br>
+  <li><strong><code>green_sphere_movement.py</code></strong><br>
     Controls a green sphere in the simulation. Moves it back and forth along the Y-axis in a sinusoidal pattern. Used for visual servoing.
   </li>
 </ul>
 
-## Sphere Following Using Point-to-Point Control
+## Green Sphere Following Using Point-to-Point Control
 
 <p align="justify">
-First, this project implements a visual servoing system where a differential-drive robot tracks and follows a green sphere using a point-to-point PID control. A camera mounted on the robot detects the sphere through HSV color segmentation. The centroid of the sphere is used to compute a heading correction, from which a target waypoint is generated a fixed distance ahead. This waypoint is sent to a PID controller that computes the linear and angular velocities needed to drive the robot toward the goal using odometry feedback. Here’s a quick breakdown of the involved files:
+First, this project implements a visual servoing system where a differential-drive robot tracks and follows a green sphere using point-to-point PID control. A camera mounted on the robot detects the sphere through HSV color segmentation. The centroid of the sphere is used to compute a heading correction, from which a target waypoint is generated a fixed distance ahead. This waypoint is sent to a PID controller that computes the linear and angular velocities needed to drive the robot toward the goal using odometry feedback. Here’s a quick breakdown of the involved files:
 </p>
 
 <ul>
-  <li><strong><code>sim_diff_drive_vision/sphere_following.py</code></strong><br>
+  <li><strong><code>sim_diff_drive_vision/green_sphere_following.py</code></strong><br>
     Detects the green sphere in camera images and publishes a 2D waypoint ahead of the robot.
   </li>
 
@@ -54,19 +54,22 @@ First, this project implements a visual servoing system where a differential-dri
   </li>
 
   <li><strong><code>sim_diff_drive_control/point_controller.py</code></strong><br>
-    PID position controller that computes velocity commands (<code>cmd_vel</code>) based on the robot’s pose and goal.
+    PID point-to-point controller that computes velocity commands (<code>cmd_vel</code>) based on the robot’s pose and goal.
   </li>
 </ul>
 
 <p align="center"> 
-  <img src="https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732" alt="rqt_graph of Sphere Following Using Position Control" width="600"/> 
+  <img src="https://github.com/user-attachments/assets/71889e6f-da28-46a1-a3c6-3492d6153732" alt="rqt_graph of Green Sphere Following Using Point-to-Point Control" width="600"/> 
 </p>
 
-<p align="justify"> Start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the system using: </p> 
+<p align="justify">
+Open the <code>green_sphere_following.ttt</code> file, start the simulation in CoppeliaSim, and after building all packages (except <code>sim_ros2_interface</code>), run the system using:
+</p>
 
 ```bash
-ros2 launch sim_diff_drive_bringup sphere_following.launch.py
+ros2 launch sim_diff_drive_bringup green_sphere_following.launch.py
 ```
+
 <p align="center"> 
-  <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Sphere Following Using Position Control Demo" width="600"/> 
+  <img src="https://github.com/user-attachments/assets/f640f153-d37f-4a34-aa62-dc3051c473d1" alt="Green Sphere Following Using Point-to-Point Control Demo" width="600"/> 
 </p>
