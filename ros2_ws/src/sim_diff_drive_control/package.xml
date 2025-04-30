@@ -11,18 +11,24 @@
   <license>Apache-2.0</license>
 
   <build_depend>rclpy</build_depend>
+  <build_depend>rcl_interfaces</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>std_srvs</build_depend>
+  <build_depend>sim_diff_drive_utils</build_depend>
+  <build_depend>tf_transformations</build_depend>
 
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>std_srvs</exec_depend>
+  <exec_depend>sim_diff_drive_utils</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

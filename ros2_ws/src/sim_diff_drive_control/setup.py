@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'point_controller = sim_diff_drive_control.point_controller:main',
-            'localization = sim_diff_drive_control.localization:main'
+            'pid_point_controller = sim_diff_drive_control.pid_point_controller:main',
+            'odometry_localization = sim_diff_drive_control.odometry_localization:main'
         ],
     },
 )

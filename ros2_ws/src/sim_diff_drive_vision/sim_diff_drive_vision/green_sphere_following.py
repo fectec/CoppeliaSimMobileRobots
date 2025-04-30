@@ -1,45 +1,25 @@
 #!/usr/bin/env python3
 
-import rclpy
 import math
+import sys
 import cv2
 import numpy as np
-from cv_bridge import CvBridge, CvBridgeError
 
+import rclpy
 from rclpy.node import Node
 from rclpy import qos
+
+from cv_bridge import CvBridge, CvBridgeError
+
+from tf_transformations import euler_from_quaternion
+from sim_diff_drive_utils.utils.math_helpers import wrap_to_pi
+
 from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray, Float32
+from std_msgs.msg import Float32, Float32MultiArray
 from geometry_msgs.msg import Pose2D
 
 from std_srvs.srv import SetBool
-
-# ========================
-# Utility Functions
-# ========================
-def wrap_to_pi(theta):
-    # Wrap angle to [-pi, pi]
-    result = np.fmod((theta + math.pi), (2 * math.pi))
-    if result < 0:
-        result += 2 * math.pi
-    return result - math.pi
-
-def quaternion_to_euler(x, y, z, w):
-    # Convert quaternion (x, y, z, w) to Euler angles (roll, pitch, yaw)
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y * y)
-    roll = math.atan2(t0, t1)
-
-    t2 = +2.0 * (w * y - z * x)
-    t2 = max(min(t2, 1.0), -1.0)
-    pitch = math.asin(t2)
-
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y * y + z * z)
-    yaw = math.atan2(t3, t4)
-
-    return roll, pitch, yaw
 
 class GreenSphereFollowing(Node):
     """
@@ -66,23 +46,45 @@ class GreenSphereFollowing(Node):
         self.bridge = CvBridge()
 
         # Subscribe to the camera image topic
-        self.create_subscription(Image, '/camera/image', self.image_callback, qos.qos_profile_sensor_data)
+        self.create_subscription(
+            Image, 
+            '/camera/image', 
+            self.image_callback, 
+            qos.qos_profile_sensor_data
+        )
+
         # Subscribe to odometry to get the current robot pose
-        self.create_subscription(Odometry, '/odom', self.odom_callback, qos.qos_profile_sensor_data)
+        self.create_subscription(
+            Odometry, 
+            'sim_diff_drive/odom', 
+            self.odom_callback, 
+            qos.qos_profile_sensor_data
+        )
+
         # Subscribe to simulation time (Float32 message from CoppeliaSim)
-        self.create_subscription(Float32, '/simulationTime', self.sim_time_callback, qos.qos_profile_sensor_data)
-        # Publisher for the setpoint as a Float32MultiArray
-        self.setpoint_pub = self.create_publisher(Float32MultiArray, '/setpoint', qos.qos_profile_sensor_data)
+        self.create_subscription(
+            Float32, 
+            'simulationTime', 
+            self.sim_time_callback, 
+            qos.qos_profile_sensor_data
+        )
+
+        # Publisher for the waypoint as a Float32MultiArray
+        self.waypoint_pub = self.create_publisher(
+            Float32MultiArray, 
+            'sim_diff_drive/point_PID/waypoint', 
+            qos.qos_profile_sensor_data
+        )
 
         # Create a client for stopping/resuming the PID controller via a service
-        self.pid_stop_client = self.create_client(SetBool, '/pid_stop')
+        self.pid_stop_client = self.create_client(SetBool, 'sim_diff_drive/point_PID/PID_stop')
         while not self.pid_stop_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("/pid_stop service not available, waiting...")
+            self.get_logger().info("/sim_diff_drive/point_PID/PID_stop service not available, waiting...")
 
         # Store the current robot pose as a Pose2D
         self.current_pose = Pose2D()
 
-        # Declare and load parameters for generating the setpoint
+        # Declare and load parameters for generating the waypoint
         self.declare_parameter('d', 0.5)                # Fixed lookahead distance (m) for waypoint generation
         self.declare_parameter('k_delta', 0.005)        # Gain to convert pixel error to heading adjustment (rad/pixel)
         self.declare_parameter('error_deadband', 5)     # Deadband threshold for pixel error (pixels)
@@ -103,26 +105,28 @@ class GreenSphereFollowing(Node):
         # Fixed image center: once set, this value won't change
         self.image_center = None
 
-        # Simulation time variables (s)
-        self.sim_time = None
+        # Time tracking (s)
+        self.now_time = None
         self.last_ball_time = None
 
         # Flag indicating if the PID stop command has been sent
         self.pid_stopped = False
 
-        self.get_logger().info("Visual Servoing Node Started.")
+        self.get_logger().info("GreenSphereFollowing Start.")
 
     def sim_time_callback(self, msg):
         # Update simulation time from the /simulationTime topic (s)
-        self.sim_time = msg.data
+        self.now_time = msg.data
 
     def odom_callback(self, msg):
-        # Update the robot's current pose using odometry data
+        # Update x, y
         self.current_pose.x = msg.pose.pose.position.x
         self.current_pose.y = msg.pose.pose.position.y
+
+        # Convert the incoming orientation quaternion to Euler angles,
+        # then store the yaw component
         q = msg.pose.pose.orientation
-        # Convert quaternion to Euler angles to extract yaw (robot's heading)
-        _, _, yaw = quaternion_to_euler(q.x, q.y, q.z, q.w)
+        roll, pitch, yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])
         self.current_pose.theta = yaw
 
     def call_pid_stop_service(self, stop: bool):
@@ -136,7 +140,7 @@ class GreenSphereFollowing(Node):
     def pid_stop_response_callback(self, future, stop):
         try:
             result = future.result()
-            self.get_logger().info(f"PID stop service call successful: {stop}")
+            self.get_logger().info(f"PID stop service call successful: {stop}.")
         except Exception as e:
             self.get_logger().error("PID stop service call failed: " + str(e))
 
@@ -179,7 +183,7 @@ class GreenSphereFollowing(Node):
                 if M["m00"] != 0:
                     ball_detected = True
                     # Update the last time a ball was detected using simulation time
-                    self.last_ball_time = self.sim_time
+                    self.last_ball_time = self.now_time
 
                     # If the PID was stopped, call the service to resume
                     if self.pid_stopped:
@@ -222,13 +226,13 @@ class GreenSphereFollowing(Node):
                     x_goal = self.current_pose.x + self.d * math.cos(desired_heading)
                     y_goal = self.current_pose.y + self.d * math.sin(desired_heading)
 
-                    # Build the setpoint message containing only x and y
-                    setpoint_msg = Float32MultiArray()
-                    setpoint_msg.data = [x_goal, y_goal]
-                    self.setpoint_pub.publish(setpoint_msg)
+                    # Build the waypoint message containing only x and y
+                    waypoint_msg = Float32MultiArray()
+                    waypoint_msg.data = [x_goal, y_goal]
+                    self.waypoint_pub.publish(waypoint_msg)
 
                     self.get_logger().info(
-                        f"Setpoint published: x: {x_goal:.2f}, y: {y_goal:.2f}"
+                        f"waypoint published: x: {x_goal:.2f}, y: {y_goal:.2f}"
                     )
 
                     # Draw a blue line from the fixed image center to the centroid (for debug)
@@ -238,7 +242,7 @@ class GreenSphereFollowing(Node):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
         # If no ball is detected, check the elapsed simulation time since the last detection
         if not ball_detected:
-            if self.last_ball_time is not None and self.sim_time is not None:
+            if self.last_ball_time is not None and self.now_time is not None:
                 elapsed = self.sim_time - self.last_ball_time
                 # If elapsed simulation time exceeds ball_timeout and the PID has not already been stopped, then call the service
                 if elapsed > self.ball_timeout and not self.pid_stopped:
@@ -257,16 +261,22 @@ class GreenSphereFollowing(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = GreenSphereFollowing()
-    
+
+    try:
+        node = GreenSphereFollowing()
+    except Exception as e:
+        print(f"[FATAL] OdometryLocalization failed to initialize: {e}.", file=sys.stderr)
+        rclpy.shutdown()
+        return
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        node.get_logger().info("Interrupted with Ctrl+C.")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
-        cv2.destroyAllWindows()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
