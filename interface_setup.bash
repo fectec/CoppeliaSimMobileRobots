@@ -21,6 +21,7 @@ ulimit -s unlimited
 # Navigate to the ROS2 workspace directory and build the workspace
 cd ros2_ws
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install/setup.bash
 
 # ---------------------------------------------------------------------------
 # The plugin is now ready to be used.
