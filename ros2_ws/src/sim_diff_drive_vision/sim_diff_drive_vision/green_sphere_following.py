@@ -41,13 +41,8 @@ def quaternion_to_euler(x, y, z, w):
 
     return roll, pitch, yaw
 
-# ========================
-# Sphere Following Node
-# ========================
-class SphereFollowing(Node):
+class GreenSphereFollowing(Node):
     """
-    Sphere Following Node for a differential-drive robot.
-    
     This node performs the following:
       - Receives camera images and converts them into an OpenCV BGR image.
       - Converts the image into HSV color space and applies a mask to extract
@@ -67,7 +62,7 @@ class SphereFollowing(Node):
     """
 
     def __init__(self):
-        super().__init__('sphere_following')
+        super().__init__('green_sphere_following')
         self.bridge = CvBridge()
 
         # Subscribe to the camera image topic
@@ -262,7 +257,7 @@ class SphereFollowing(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SphereFollowing()
+    node = GreenSphereFollowing()
     
     try:
         rclpy.spin(node)

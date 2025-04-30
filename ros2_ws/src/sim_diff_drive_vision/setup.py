@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'camera_display = sim_diff_drive_vision.camera_display:main',
-            'sphere_following = sim_diff_drive_vision.sphere_following:main'
+            'green_sphere_following = sim_diff_drive_vision.green_sphere_following:main'       
         ],
     },
 )

@@ -2,12 +2,12 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    sphere_following_node = Node(
-        package='sim_diff_drive_vision',
-        executable='sphere_following',
-        name='sphere_following'
+    green_sphere_following_node = Node(
+    package='sim_diff_drive_vision',
+    executable='green_sphere_following',
+    name='green_sphere_following',
     )
-        
+  
     localization_node = Node(
         package='sim_diff_drive_control',
         executable='localization',
@@ -21,7 +21,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        sphere_following_node,
+        green_sphere_following_node,
         localization_node,
         point_controller_node
     ])
