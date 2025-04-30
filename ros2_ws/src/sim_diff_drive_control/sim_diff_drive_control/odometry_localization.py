@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import math
-import time
 import sys
 
 import rclpy
@@ -29,10 +28,10 @@ class OdometryLocalization(Node):
         super().__init__('odometry_localization')
 
         # Declare parameters
-        self.declare_parameter('update_rate',      200.0)   # Hz
+        self.declare_parameter('update_rate',      40.0)    # Hz
         self.declare_parameter('integration_rate', 100.0)   # Hz
-        self.declare_parameter('wheel_base',       0.173)   # m
-        self.declare_parameter('wheel_radius',     0.0505)  # m
+        self.declare_parameter('wheel_base',       0.119)   # m
+        self.declare_parameter('wheel_radius',     0.027)   # m
 
         # Load parameters
         self.update_rate      = self.get_parameter('update_rate').value
@@ -70,9 +69,6 @@ class OdometryLocalization(Node):
         # Time tracking (s)
         self.now_time = None
         self.last_time = None
-
-        # Limit logging frequency (s)
-        self.last_log_time = 0.0
 
         # TF broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
@@ -187,12 +183,9 @@ class OdometryLocalization(Node):
         self.tf_broadcaster.sendTransform(t)   
 
         # Log the updated pose
-        current_time = time.time()
-        if current_time - self.last_log_time > 1.0:  # Log once per second at most
-            self.get_logger().info(
-                f"Pose -> x: {self.x:.3f}, y: {self.y:.3f}, theta: {self.theta:.3f} rad"
-            )
-            self.last_log_time = current_time
+        self.get_logger().info(
+            f"Pose -> x: {self.x:.3f}, y: {self.y:.3f}, theta: {self.theta:.3f} rad"
+        )
 
     def parameter_callback(self, params):
         for param in params:

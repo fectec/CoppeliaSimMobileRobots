@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import math
-import time
 import sys
 
 import rclpy
@@ -53,17 +52,17 @@ class PIDPointController(Node):
         super().__init__('pid_point_controller')
         
         # Declare parameters
-        self.declare_parameter('update_rate',         100.0)    # Hz
-        self.declare_parameter('Kp_V',                0.1)      
-        self.declare_parameter('Ki_V',                0.0)
-        self.declare_parameter('Kd_V',                0.0)
-        self.declare_parameter('Kp_Omega',            0.1)
-        self.declare_parameter('Ki_Omega',            0.0)
-        self.declare_parameter('Kd_Omega',            0.0)
-        self.declare_parameter('goal_tolerance',      0.08)     # m
-        self.declare_parameter('heading_tolerance',   0.08)     # m
+        self.declare_parameter('update_rate',         10.0)     # Hz
+        self.declare_parameter('Kp_V',                1.2)      
+        self.declare_parameter('Ki_V',                0.0008)
+        self.declare_parameter('Kd_V',                0.0004)
+        self.declare_parameter('Kp_Omega',            1.6)
+        self.declare_parameter('Ki_Omega',            0.0008)
+        self.declare_parameter('Kd_Omega',            0.0004)
+        self.declare_parameter('goal_tolerance',      0.01)     # m
+        self.declare_parameter('heading_tolerance',   0.01)     # m
         self.declare_parameter('min_linear_speed',    0.1)      # m/s
-        self.declare_parameter('max_linear_speed',    0.17)     # m/s
+        self.declare_parameter('max_linear_speed',    0.5)      # m/s
         self.declare_parameter('min_angular_speed',  -1.0)      # rad/s
         self.declare_parameter('max_angular_speed',    1.0)     # rad/s
 
@@ -123,9 +122,6 @@ class PIDPointController(Node):
         self.last_signed_e_d = 0.0
         self.last_e_theta = 0.0
 
-        # Limit logging frequency (s)
-        self.last_log_time = 0.0
-
         # Publishers
         self.cmd_pub = self.create_publisher(
             Twist,
@@ -133,7 +129,6 @@ class PIDPointController(Node):
             qos.QoSProfile(depth=10, reliability=qos.ReliabilityPolicy.RELIABLE)
         )
 
-        self.waypoint_pub   = self.create_publisher(Pose2D,  'sim_diff_drive/point_PID/waypoint', 10)
         self.signed_e_d_pub   = self.create_publisher(Float32, 'sim_diff_drive/point_PID/signed_e_d', 10)
         self.abs_e_d_pub = self.create_publisher(Float32, 'sim_diff_drive/point_PID/abs_e_d', 10)
         self.e_theta_pub    = self.create_publisher(Float32, 'sim_diff_drive/point_PID/e_theta', 10)
@@ -230,7 +225,7 @@ class PIDPointController(Node):
         # if it’s less than the interval dictated by update_rate,
         # to enforce a consistent loop frequency
         dt = self.now_time - self.last_time
-        if dt < 1.0 / self.integration_rate:
+        if dt < 1.0 / self.update_rate:
             return
         self.last_time = self.now_time
 
@@ -242,8 +237,8 @@ class PIDPointController(Node):
             return
 
         # Compute position error components
-        e_x = self.setpoint.x - self.current_pose.x
-        e_y = self.setpoint.y - self.current_pose.y
+        e_x = self.waypoint.x - self.current_pose.x
+        e_y = self.waypoint.y - self.current_pose.y
 
         # Signed distance error along the robot's heading
         signed_e_d = e_x * math.cos(self.current_pose.theta) + e_y * math.sin(self.current_pose.theta)
@@ -290,12 +285,9 @@ class PIDPointController(Node):
         self.cmd_pub.publish(cmd)
 
         # Debug info
-        current_time = time.time()
-        if current_time - self.last_log_time > 1.0:  # Log once per second at most
-            self.get_logger().info(
-                f"Control: dist_err={abs_e_d:.3f}, ang_err={e_theta:.3f}, V={V:.3f}, Omega={Omega:.3f}."
-            )
-            self.last_log_time = current_time
+        self.get_logger().info(
+            f"Control: dist_err={abs_e_d:.3f}, ang_err={e_theta:.3f}, V={V:.3f}, Omega={Omega:.3f}."
+        )
 
     def parameter_callback(self, params):
         for param in params:
