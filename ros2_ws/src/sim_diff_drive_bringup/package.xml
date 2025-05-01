@@ -11,11 +11,15 @@
 
   <build_depend>launch</build_depend>
   <build_depend>launch_ros</build_depend>
+  <build_depend>sim_diff_drive_vision</build_depend>
+  <build_depend>sim_diff_drive_control</build_depend>
+  <build_depend>sim_diff_drive_behavior</build_depend>
 
-  <exec_depend>sim_diff_drive_vision</exec_depend>
-  <exec_depend>sim_diff_drive_control</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>sim_diff_drive_vision</exec_depend>
+  <exec_depend>sim_diff_drive_control</exec_depend>
+  <exec_depend>sim_diff_drive_behavior</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
