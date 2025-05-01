@@ -265,7 +265,7 @@ def main(args=None):
     try:
         node = GreenSphereFollowing()
     except Exception as e:
-        print(f"[FATAL] OdometryLocalization failed to initialize: {e}.", file=sys.stderr)
+        print(f"[FATAL] GreenSphereFollowing failed to initialize: {e}.", file=sys.stderr)
         rclpy.shutdown()
         return
 

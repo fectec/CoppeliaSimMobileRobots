@@ -54,16 +54,22 @@ class CameraDisplay(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraDisplay()
+
+    try:
+        node = CameraDisplay()
+    except Exception as e:
+        print(f"[FATAL] GreenSphereFollowing failed to initialize: {e}.", file=sys.stderr)
+        rclpy.shutdown()
+        return
 
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        node.get_logger().info("Interrupted with Ctrl+C.")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
-        cv2.destroyAllWindows()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
