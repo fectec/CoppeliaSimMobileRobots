@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'camera_display = sim_diff_drive_vision.camera_display:main',
             'green_sphere_following = sim_diff_drive_vision.green_sphere_following:main',       
-            'sphere_detection = sim_diff_drive_vision.sphere_detection:main'       
+            'sphere_detection = sim_diff_drive_vision.sphere_detection:main',
+            'image_flipper = sim_diff_drive_vision.image_flipper:main',       
         ],
     },
 )
