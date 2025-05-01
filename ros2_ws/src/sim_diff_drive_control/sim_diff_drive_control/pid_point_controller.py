@@ -61,10 +61,6 @@ class PIDPointController(Node):
         self.declare_parameter('Kd_Omega',            0.0004)
         self.declare_parameter('goal_tolerance',      0.01)     # m
         self.declare_parameter('heading_tolerance',   0.01)     # m
-        self.declare_parameter('min_linear_speed',    0.1)      # m/s
-        self.declare_parameter('max_linear_speed',    0.5)      # m/s
-        self.declare_parameter('min_angular_speed',  -1.0)      # rad/s
-        self.declare_parameter('max_angular_speed',    1.0)     # rad/s
 
         # Retrieve parameters
         self.update_rate        = self.get_parameter('update_rate').value
@@ -76,11 +72,7 @@ class PIDPointController(Node):
         self.Kd_Omega           = self.get_parameter('Kd_Omega').value
         self.goal_tolerance     = self.get_parameter('goal_tolerance').value
         self.heading_tolerance  = self.get_parameter('heading_tolerance').value
-        self.min_linear_speed   = self.get_parameter('min_linear_speed').value
-        self.max_linear_speed   = self.get_parameter('max_linear_speed').value
-        self.min_angular_speed  = self.get_parameter('min_angular_speed').value
-        self.max_angular_speed  = self.get_parameter('max_angular_speed').value
-        
+
         # Timer for the control loop
         self.timer = self.create_timer(1.0 / self.update_rate, self.control_loop)
 
@@ -97,11 +89,7 @@ class PIDPointController(Node):
             Parameter('Ki_Omega',          Parameter.Type.DOUBLE, self.Ki_Omega),
             Parameter('Kd_Omega',          Parameter.Type.DOUBLE, self.Kd_Omega),
             Parameter('goal_tolerance',    Parameter.Type.DOUBLE, self.goal_tolerance),
-            Parameter('heading_tolerance', Parameter.Type.DOUBLE, self.heading_tolerance),
-            Parameter('min_linear_speed',  Parameter.Type.DOUBLE, self.min_linear_speed),
-            Parameter('max_linear_speed',  Parameter.Type.DOUBLE, self.max_linear_speed),
-            Parameter('min_angular_speed', Parameter.Type.DOUBLE, self.min_angular_speed),
-            Parameter('max_angular_speed', Parameter.Type.DOUBLE, self.max_angular_speed),
+            Parameter('heading_tolerance', Parameter.Type.DOUBLE, self.heading_tolerance)
         ]
 
         result: SetParametersResult = self.parameter_callback(init_params)
@@ -121,6 +109,7 @@ class PIDPointController(Node):
         self.integral_e_theta = 0.0
         self.last_signed_e_d = 0.0
         self.last_e_theta = 0.0
+        self.stopped_pid = False
 
         # Publishers
         self.cmd_pub = self.create_publisher(
@@ -160,20 +149,6 @@ class PIDPointController(Node):
         self.pid_stop = False
 
         self.get_logger().info("PIDPointController Start.")
-
-    def apply_velocity_constraints(self, velocity, min_vel, max_vel):
-        if abs(velocity) < 0.01:    # Effectively zero
-            return 0.0
-            
-        # Apply minimum threshold (to overcome friction/inertia)
-        if abs(velocity) < abs(min_vel):
-            velocity = abs(min_vel) * (1 if velocity > 0 else -1)
-            
-        # Apply maximum limit (saturation)
-        if abs(velocity) > abs(max_vel):
-            velocity = abs(max_vel) * (1 if velocity > 0 else -1)
-            
-        return velocity
     
     def sim_time_callback(self, msg):
         # Update simulation time from the /simulationTime topic (s)
@@ -256,8 +231,14 @@ class PIDPointController(Node):
         
         # Auto-stop if both errors are below thresholds
         if abs_e_d < self.goal_tolerance and abs(e_theta) < self.heading_tolerance:
-            if not self.pid_stop:
-                self.pid_stop = True
+            self.cmd_pub.publish(Twist())
+            if not self.stopped_pid:
+                self.stopped_pid = True
+                self.get_logger().info("Target reached. Stopping the robot.")
+            self.last_time = self.now_time
+            return 
+        else:
+            self.stopped_pid = False
 
         # PID control for linear velocity
         self.integral_e_d += signed_e_d * dt
@@ -273,10 +254,6 @@ class PIDPointController(Node):
         self.last_signed_e_d = signed_e_d
         self.last_e_theta = e_theta
         self.last_time = self.now_time
-
-        # Apply nonlinearity handling
-        V = self.apply_velocity_constraints(V, self.min_linear_speed, self.max_linear_speed)
-        Omega = self.apply_velocity_constraints(Omega, self.min_angular_speed, self.max_angular_speed)
 
         # Publish the computed command
         cmd = Twist()
@@ -331,51 +308,6 @@ class PIDPointController(Node):
                     )
                 self.heading_tolerance = float(param.value)
                 self.get_logger().info(f"Heading tolerance updated: {self.heading_tolerance}.")
-
-            elif param.name == 'min_linear_speed':
-                if not isinstance(param.value, (int, float)) or param.value < 0.0:
-                    return SetParametersResult(
-                        successful=False,
-                        reason="min_linear_speed must be a non-negative number."
-                    )
-                self.min_linear_speed = float(param.value)
-                self.get_logger().info(f"Min linear speed updated: {self.min_linear_speed}.")
-
-            elif param.name == 'max_linear_speed':
-                if not isinstance(param.value, (int, float)):
-                    return SetParametersResult(
-                        successful=False,
-                        reason="max_linear_speed must be a number."
-                    )
-                self.max_linear_speed = float(param.value)
-                self.get_logger().info(f"Max linear speed updated: {self.max_linear_speed}.")
-
-            elif param.name == 'min_angular_speed':
-                if not isinstance(param.value, (int, float)):
-                    return SetParametersResult(
-                        successful=False,
-                        reason="min_angular_speed must be a number."
-                    )
-                self.min_angular_speed = float(param.value)
-                self.get_logger().info(f"Min angular speed updated: {self.min_angular_speed}.")
-
-            elif param.name == 'max_angular_speed':
-                if not isinstance(param.value, (int, float)):
-                    return SetParametersResult(
-                        successful=False,
-                        reason="max_angular_speed must be a number."
-                    )
-                self.max_angular_speed = float(param.value)
-                self.get_logger().info(f"Max angular speed updated: {self.max_angular_speed}.")
-
-            elif param.name == 'auto_request_next':
-                if not isinstance(param.value, bool):
-                    return SetParametersResult(
-                        successful=False,
-                        reason="auto_request_next must be true or false."
-                    )
-                self.auto_request_next = param.value
-                self.get_logger().info(f"Auto‐request next waypoint: {self.auto_request_next}.")
 
         return SetParametersResult(successful=True)
 

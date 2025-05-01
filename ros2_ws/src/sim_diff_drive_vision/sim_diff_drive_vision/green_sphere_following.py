@@ -243,7 +243,7 @@ class GreenSphereFollowing(Node):
         # If no ball is detected, check the elapsed simulation time since the last detection
         if not ball_detected:
             if self.last_ball_time is not None and self.now_time is not None:
-                elapsed = self.sim_time - self.last_ball_time
+                elapsed = self.now_time - self.last_ball_time
                 # If elapsed simulation time exceeds ball_timeout and the PID has not already been stopped, then call the service
                 if elapsed > self.ball_timeout and not self.pid_stopped:
                     self.call_pid_stop_service(True)
