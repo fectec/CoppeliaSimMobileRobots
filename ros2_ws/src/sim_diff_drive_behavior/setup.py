@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'local_trajectory_sphere_fsm = sim_diff_drive_behavior.local_trajectory_sphere_fsm:main',
+            'sphere_color_orchestrator = sim_diff_drive_behavior.sphere_color_orchestrator:main',
         ],
     },
 )
