@@ -9,7 +9,7 @@ class SphereColorOrchestrator(Node):
         # Parámetros de color
         self.declare_parameter(
             'sphere_colors',
-            ['amarilla', 'azul', 'naranja']
+            ['azul', 'azul', 'naranja', 'naranja', 'amarilla']
         )
         self.sphere_colors = (
             self.get_parameter('sphere_colors')
