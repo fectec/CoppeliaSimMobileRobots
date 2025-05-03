@@ -12,7 +12,7 @@ from rcl_interfaces.msg import SetParametersResult
 from tf_transformations import euler_from_quaternion
 from sim_diff_drive_utils.utils.math_helpers import wrap_to_pi
 
-from std_msgs.msg import Float32, Float32MultiArray, Bool
+from std_msgs.msg import Float32, Float32MultiArray
 from geometry_msgs.msg import Twist, Pose2D
 from nav_msgs.msg import Odometry
 
@@ -46,25 +46,23 @@ class PIDPointController(Node):
 
       This node also includes a service (/sim_diff_drive/point_PID/PID_stop) that, when called, forces the controller to publish a zero Twist.
       In addition, if a new waypoint is received (via /sim_diff_drive/point_PID/waypoint), the controller automatically resumes.
-      
-      The node can be configured to use either a constant linear velocity or PID-controlled linear velocity via the 'use_constant_linear_speed' parameter.
     """
 
     def __init__(self):
         super().__init__('pid_point_controller')
         
         # Declare parameters
-        self.declare_parameter('update_rate',                 10.0)     # Hz
-        self.declare_parameter('Kp_V',                        1.0)      
-        self.declare_parameter('Ki_V',                        0.0)
-        self.declare_parameter('Kd_V',                        0.0)
-        self.declare_parameter('Kp_Omega',                    1.5)
-        self.declare_parameter('Ki_Omega',                    0.0)
-        self.declare_parameter('Kd_Omega',                    0.0)
-        self.declare_parameter('goal_tolerance',              0.01)     # m
-        self.declare_parameter('heading_tolerance',           0.01)     # m
-        self.declare_parameter('use_constant_linear_speed',   True)     # Boolean to toggle constant linear speed
-        self.declare_parameter('constant_linear_speed',       1.0)      # m/s
+        self.declare_parameter('update_rate',         10.0)         # Hz
+        self.declare_parameter('Kp_V',                1.0)      
+        self.declare_parameter('Ki_V',                0.0)
+        self.declare_parameter('Kd_V',                0.0)
+        self.declare_parameter('Kp_Omega',            1.5)
+        self.declare_parameter('Ki_Omega',            0.0)
+        self.declare_parameter('Kd_Omega',            0.0)
+        self.declare_parameter('goal_tolerance',      0.01)         # m
+        self.declare_parameter('heading_tolerance',   0.01)         # m
+        self.declare_parameter('use_constant_linear_speed', True)   # Boolean to toggle constant linear speed
+        self.declare_parameter('constant_linear_speed',     1.0)    # m/s
 
         # Retrieve parameters
         self.update_rate               = self.get_parameter('update_rate').value
@@ -126,16 +124,9 @@ class PIDPointController(Node):
             qos.QoSProfile(depth=10, reliability=qos.ReliabilityPolicy.RELIABLE)
         )
 
-        self.signed_e_d_pub = self.create_publisher(Float32, 'sim_diff_drive/point_PID/signed_e_d', 10)
+        self.signed_e_d_pub   = self.create_publisher(Float32, 'sim_diff_drive/point_PID/signed_e_d', 10)
         self.abs_e_d_pub = self.create_publisher(Float32, 'sim_diff_drive/point_PID/abs_e_d', 10)
-        self.e_theta_pub = self.create_publisher(Float32, 'sim_diff_drive/point_PID/e_theta', 10)
-        
-        # Publisher for current linear speed mode
-        self.linear_mode_pub = self.create_publisher(
-            Bool, 
-            'sim_diff_drive/point_PID/using_constant_speed', 
-            10
-        )
+        self.e_theta_pub    = self.create_publisher(Float32, 'sim_diff_drive/point_PID/e_theta', 10)
 
         # Subscribers for odometry and goal waypoint
         self.create_subscription(
@@ -163,12 +154,7 @@ class PIDPointController(Node):
         self.create_service(SetBool, 'sim_diff_drive/point_PID/PID_stop', self.pid_stop_callback)
         self.pid_stop = False
 
-        # Log the initial speed mode configuration
-        speed_mode = "constant" if self.use_constant_linear_speed else "PID-controlled"
-        self.get_logger().info(f"PIDPointController Start. Using {speed_mode} linear speed.")
-        
-        # Publish initial linear speed mode
-        self.linear_mode_pub.publish(Bool(data=self.use_constant_linear_speed))
+        self.get_logger().info("PIDPointController Start.")
     
     def sim_time_callback(self, msg):
         # Update simulation time from the /simulationTime topic (s)
@@ -217,7 +203,7 @@ class PIDPointController(Node):
         
         # Calculate the elapsed time 
         # since the last update and return early 
-        # if it's less than the interval dictated by update_rate,
+        # if it’s less than the interval dictated by update_rate,
         # to enforce a consistent loop frequency
         dt = self.now_time - self.last_time
         if dt < 1.0 / self.update_rate:
@@ -287,9 +273,8 @@ class PIDPointController(Node):
         self.cmd_pub.publish(cmd)
 
         # Debug info
-        speed_mode = "constant" if self.use_constant_linear_speed else "PID"
         self.get_logger().info(
-            f"Control ({speed_mode} linear speed): dist_err={abs_e_d:.3f}, ang_err={e_theta:.3f}, V={V:.3f}, Omega={Omega:.3f}."
+            f"Control: dist_err={abs_e_d:.3f}, ang_err={e_theta:.3f}, V={V:.3f}, Omega={Omega:.3f}."
         )
 
     def parameter_callback(self, params):
@@ -334,7 +319,7 @@ class PIDPointController(Node):
                     )
                 self.heading_tolerance = float(param.value)
                 self.get_logger().info(f"Heading tolerance updated: {self.heading_tolerance}.")
-                
+            
             elif param.name == 'use_constant_linear_speed':
                 if not isinstance(param.value, bool):
                     return SetParametersResult(
@@ -342,11 +327,7 @@ class PIDPointController(Node):
                         reason="use_constant_linear_speed must be a boolean value."
                     )
                 self.use_constant_linear_speed = param.value
-                speed_mode = "constant" if self.use_constant_linear_speed else "PID-controlled"
-                self.get_logger().info(f"Linear speed mode updated: using {speed_mode} linear speed.")
-                # Publish updated mode
-                self.linear_mode_pub.publish(Bool(data=self.use_constant_linear_speed))
-                
+
             elif param.name == 'constant_linear_speed':
                 if not isinstance(param.value, (int, float)) or param.value < 0.0:
                     return SetParametersResult(
@@ -355,7 +336,7 @@ class PIDPointController(Node):
                     )
                 self.constant_linear_speed = float(param.value)
                 self.get_logger().info(f"Constant linear speed updated: {self.constant_linear_speed}.")
-
+        
         return SetParametersResult(successful=True)
 
 def main(args=None):
