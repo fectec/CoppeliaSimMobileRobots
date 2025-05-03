@@ -23,7 +23,7 @@ class LocalTrajectorySphereFSM(Node):
         super().__init__('local_trajectory_sphere_fsm')
         
         # Declare parameters
-        self.declare_parameter('update_rate', 10.0)             # Hz
+        self.declare_parameter('update_rate', 20.0)             # Hz
         self.declare_parameter('angular_velocity_right', -1.0)  # rad/s for orange sphere
         self.declare_parameter('angular_velocity_left', 1.0)    # rad/s for blue sphere
         self.declare_parameter('pause_duration', 5.0)           # s for yellow sphere pause
