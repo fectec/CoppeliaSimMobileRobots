@@ -120,7 +120,7 @@ The state transitions follow these rules:
 </ul>
 
 <p align="justify">
-This system utilizes a general sphere detection node <strong><code>sim_diff_drive_vision/sphere_detection.py</code></strong> that can recognize all configured color spheres using HSV thresholding, and publishes both the detected color and a 2D waypoint ahead of the robot in a custom <code>SphereDetection.msg</code> message.</p> 
+This system utilizes a general sphere detection node <strong><code>sim_diff_drive_vision/sphere_detection.py</code></strong> that can recognize all configured color spheres, and publishes both the detected color and a 2D waypoint ahead of the robot in a custom <code>SphereDetection.msg</code> message.</p> 
 
 <p align="justify">
 If multiple colors are on the scene, the detection algorithm prioritizes green spheres for waypoint calculation, and if no green sphere is present, it uses the color with the largest area.</p> 
