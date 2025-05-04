@@ -1,0 +1,33 @@
+sphere_detection:
+  ros__parameters:
+    d: 0.5
+    k_delta: 0.005
+    error_deadband: 5.0
+    delta_alpha: 0.8
+    area_threshold: 10.0
+    debug_view: True
+
+odometry_localization:
+  ros__parameters:
+    update_rate: 20.0
+    integration_rate: 20.0
+    wheel_base: 0.119
+    wheel_radius: 0.027
+
+pid_point_controller:
+  ros__parameters:
+    update_rate: 5.0
+    Kp_Omega: 1.0
+    Ki_Omega: 0.0008
+    Kd_Omega: 0.004
+    goal_tolerance: 0.01
+    heading_tolerance: 0.01
+    use_constant_linear_speed: True
+    constant_linear_speed: 1.0
+
+local_trajectory_sphere_fsm:
+  ros__parameters:
+    update_rate: 5.0
+    angular_velocity_right: -1.0
+    angular_velocity_left: 1.0
+    pause_duration: 5.0

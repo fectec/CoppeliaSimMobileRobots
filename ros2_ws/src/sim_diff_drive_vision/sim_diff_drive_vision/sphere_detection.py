@@ -25,24 +25,24 @@ class SphereDetectionNode(Node):
         super().__init__('sphere_detection')
         self.bridge = CvBridge()
         
-        # Minimal contour area to count as a real sphere
-        self.declare_parameter('area_threshold', 10.0)
-        self.area_threshold = self.get_parameter('area_threshold').value
-        
         # Declare parameters for waypoint generation
         self.declare_parameter('d', 0.5)                # Fixed lookahead distance (m) for waypoint generation
         self.declare_parameter('k_delta', 0.005)        # Gain to convert pixel error to heading adjustment (rad/pixel)
-        self.declare_parameter('error_deadband', 5)     # Deadband threshold for pixel error (pixels)
+        self.declare_parameter('error_deadband', 5.0)   # Deadband threshold for pixel error (pixels)
         self.declare_parameter('delta_alpha', 0.8)      # Weight factor for exponential filtering (closer to 1 gives less delay)
+        
+        # Minimal contour area to count as a real sphere
+        self.declare_parameter('area_threshold', 10.0)
         
         # Debugging window parameter
         self.declare_parameter('debug_view', True)
-        self.debug_view = self.get_parameter('debug_view').value
-    
+
         self.d = self.get_parameter('d').value
         self.k_delta = self.get_parameter('k_delta').value
         self.error_deadband = self.get_parameter('error_deadband').value
         self.delta_alpha = self.get_parameter('delta_alpha').value
+        self.area_threshold = self.get_parameter('area_threshold').value
+        self.debug_view = self.get_parameter('debug_view').value
 
         # Publisher for our custom message
         self.sphere_detection_pub = self.create_publisher(SphereDetection, '/sphere_detection', 10)

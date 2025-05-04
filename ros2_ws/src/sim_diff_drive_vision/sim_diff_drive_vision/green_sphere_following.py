@@ -48,7 +48,7 @@ class GreenSphereFollowing(Node):
         # Subscribe to the camera image topic
         self.create_subscription(
             Image, 
-            '/camera/image', 
+            '/camera/image_flipped', 
             self.image_callback, 
             qos.qos_profile_sensor_data
         )
@@ -87,7 +87,7 @@ class GreenSphereFollowing(Node):
         # Declare and load parameters for generating the waypoint
         self.declare_parameter('d', 0.5)                # Fixed lookahead distance (m) for waypoint generation
         self.declare_parameter('k_delta', 0.005)        # Gain to convert pixel error to heading adjustment (rad/pixel)
-        self.declare_parameter('error_deadband', 5)     # Deadband threshold for pixel error (pixels)
+        self.declare_parameter('error_deadband', 5.0)   # Deadband threshold for pixel error (pixels)
         self.declare_parameter('delta_alpha', 0.8)      # Weight factor for exponential filtering (closer to 1 gives less delay)
         self.declare_parameter('ball_timeout', 1.2)     # Time (s) after which if no ball is detected, consider it lost
         self.declare_parameter('area_threshold', 100.0) # Green contour area minimal threshold

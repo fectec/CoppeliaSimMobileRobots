@@ -29,7 +29,7 @@ class OdometryLocalization(Node):
 
         # Declare parameters
         self.declare_parameter('update_rate',      40.0)    # Hz
-        self.declare_parameter('integration_rate', 100.0)   # Hz
+        self.declare_parameter('integration_rate', 20.0)    # Hz
         self.declare_parameter('wheel_base',       0.119)   # m
         self.declare_parameter('wheel_radius',     0.027)   # m
 

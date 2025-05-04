@@ -52,11 +52,11 @@ class PIDPointController(Node):
         super().__init__('pid_point_controller')
         
         # Declare parameters
-        self.declare_parameter('update_rate',         10.0)         # Hz
+        self.declare_parameter('update_rate',         20.0)         # Hz
         self.declare_parameter('Kp_V',                1.0)      
         self.declare_parameter('Ki_V',                0.0)
         self.declare_parameter('Kd_V',                0.0)
-        self.declare_parameter('Kp_Omega',            1.5)
+        self.declare_parameter('Kp_Omega',            1.0)
         self.declare_parameter('Ki_Omega',            0.0)
         self.declare_parameter('Kd_Omega',            0.0)
         self.declare_parameter('goal_tolerance',      0.01)         # m

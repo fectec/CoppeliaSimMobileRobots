@@ -17,10 +17,10 @@ class ImageFlipper(Node):
         self.bridge = CvBridge()
 
         # Publisher for flipped images
-        self.publisher_ = self.create_publisher(Image, '/camera/image_flipped', 10)
+        self.image_flipped_publisher = self.create_publisher(Image, '/camera/image_flipped', 10)
 
         # Subscriber to original camera images
-        self.subscription = self.create_subscription(
+        self.image_subscriber = self.create_subscription(
             Image,
             '/camera/image',
             self.listener_callback,
@@ -49,7 +49,7 @@ class ImageFlipper(Node):
             return
             
         # Publish the flipped image
-        self.publisher_.publish(flipped_msg)
+        self.image_flipped_publisher.publish(flipped_msg)
         self.get_logger().debug('Image flipped and republished on /camera/image_flipped.')
 
 def main(args=None):

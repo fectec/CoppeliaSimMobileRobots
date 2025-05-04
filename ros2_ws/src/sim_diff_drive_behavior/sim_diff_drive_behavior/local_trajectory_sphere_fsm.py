@@ -23,7 +23,7 @@ class LocalTrajectorySphereFSM(Node):
         super().__init__('local_trajectory_sphere_fsm')
         
         # Declare parameters
-        self.declare_parameter('update_rate', 20.0)             # Hz
+        self.declare_parameter('update_rate', 5.0)              # Hz
         self.declare_parameter('angular_velocity_right', -1.0)  # rad/s for orange sphere
         self.declare_parameter('angular_velocity_left', 1.0)    # rad/s for blue sphere
         self.declare_parameter('pause_duration', 5.0)           # s for yellow sphere pause
@@ -81,10 +81,7 @@ class LocalTrajectorySphereFSM(Node):
         self.pause_start_time = None
         
         self.get_logger().info('LocalTrajectorySphereFSM Start.')
-        self.get_logger().info(f'Angular velocity right: {self.angular_velocity_right} rad/s')
-        self.get_logger().info(f'Angular velocity left: {self.angular_velocity_left} rad/s')
-        self.get_logger().info(f'Pause duration: {self.pause_duration} seconds')
-    
+
     def sim_time_callback(self, msg):
         # Update simulation time from the /simulationTime topic (s)
         self.now_time = msg.data
@@ -123,8 +120,7 @@ class LocalTrajectorySphereFSM(Node):
         # Calculate the elapsed time since the last update
         dt = self.now_time - self.last_time
         if dt < 1.0 / self.update_rate:
-            return
-        
+            return   
         self.last_time = self.now_time
         
         # Process current state actions
