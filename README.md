@@ -1,7 +1,7 @@
-# Coppelia Differential Drive
+# Coppelia Mobile Robots
 
 <p align="justify">
-ROS2-based simulation of a differential-drive robot in CoppeliaSim with visual servoing. Developed as part of the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
+ROS2-based simulation of a differential-drive robot with visual servoing and a snake robot (ACM-R5) in CoppeliaSim. Developed for the Mobile Ground Robots module in the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@ Once both are installed, use the <code>interface_setup</code> script located in 
 </p>
 
 <p align="justify">
-Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the desired <code>.ttt</code> file located in the <code>scenes</code> folder. This will load the full simulation environment, including the Lua and Python scripts attached to the objects, which you can also find in the <code>scripts</code> folder:
+Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the desired <code>.ttt</code> file located in the <code>scenes</code> folder. This will load the full simulation environment, including the Lua and Python scripts attached to the objects, which you can also find in the <code>scripts</code> folder, such as:
 </p>
 
 <ul>
@@ -25,12 +25,12 @@ Inside CoppeliaSim, go to <code>File → Open Scene</code> and load the desired 
     Publishes the current simulation time (in seconds) on the <code>/simulationTime</code> ROS2 topic using a <code>std_msgs/msg/Float32</code> message. Helps synchronize ROS2 nodes with the simulation clock.
   </li>
 
-  <li><strong><code>differential_drive.lua</code></strong><br>
-    Attached to the differential-drive robot. Implements inverse kinematics: it subscribes to <code>/cmd_vel</code> (linear and angular velocity commands), converts them into left and right wheel angular speeds, and applies them. It also publishes the actual measured wheel speeds to <code>/VelocityEncL</code> and <code>/VelocityEncR</code>.
+  <li><strong><code>image_publisher.lua</code></strong><br>
+    Attached to the differential-drive robot's onboard vision sensor. Captures RGB images from the camera and publishes them to <code>/camera/image</code> as <code>sensor_msgs/msg/Image</code>.
   </li>
 
-  <li><strong><code>image_publisher.lua</code></strong><br>
-    Attached to the onboard vision sensor. Captures RGB images from the camera and publishes them to <code>/camera/image</code> as <code>sensor_msgs/msg/Image</code>.
+  <li><strong><code>differential_drive.lua</code></strong><br>
+    Attached to the differential-drive robot. Implements inverse kinematics: it subscribes to <code>/cmd_vel</code> (linear and angular velocity commands), converts them into left and right wheel angular speeds, and applies them. It also publishes the actual measured wheel speeds to <code>/VelocityEncL</code> and <code>/VelocityEncR</code>.
   </li>
 
   <li><strong><code>green_sphere_movement.py</code></strong><br>
