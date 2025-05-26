@@ -1,5 +1,5 @@
 # Navigate to your repository root (adjust the path as needed)
-cd ~/CoppeliaDiffDrive
+cd ~/CoppeliaMobileRobots
 
 # Initialize and update submodules
 # (this fetches the CoppeliaSim ROS2 Interface submodule located in ros2_ws/src/sim_ros2_interface)
