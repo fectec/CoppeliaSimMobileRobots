@@ -1,4 +1,4 @@
-# Coppelia Mobile Robots
+# CoppeliaSim Mobile Robots
 
 <p align="justify">
 ROS2-based simulation of a differential-drive robot with visual servoing and a snake robot (ACM-R5) in CoppeliaSim. Developed for the Mobile Ground Robots module in the undergraduate course <strong>"Intelligent Robotics Implementation."</strong>
